@@ -1,0 +1,42 @@
+include: package:very_good_analysis/analysis_options.yaml
+
+analyzer:
+  exclude:
+    [
+      "bricks/**",
+      "build/**",
+      "**/*.config.dart",
+      "**/*.freezed.dart",
+      "**/*.g.dart",
+      "**/*.gen.dart",
+      "**/*.givn.dart",
+      "**/*.mocks.dart",
+      "**/*.tailor.dart",
+      "**/*localizations_*.dart",
+      "**/gen/**",
+      "**/*.rive.dart",
+    ]
+  errors:
+    invalid_annotation_target: ignore
+  language:
+    strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
+
+formatter:
+  page_width: 120
+  trailing_commas: preserve
+
+linter:
+  rules:
+    avoid_catching_errors: false
+    avoid_redundant_argument_values: false
+    implementation_imports: true
+    lines_longer_than_80_chars: false
+    omit_local_variable_types: false
+    one_member_abstracts: false
+    prefer_relative_imports: false
+    public_member_api_docs: false
+    require_trailing_commas: false
+    sort_constructors_first: false
+    prefer_expression_function_bodies: true

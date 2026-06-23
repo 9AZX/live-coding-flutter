@@ -1,0 +1,25 @@
+name: presentation
+description: A brick to create Clean Architecture Folders with Betclic conventions for all packages.
+version: 0.0.1+1
+
+# The following defines the environment for the current brick.
+# It includes the version of mason that the brick requires.
+environment:
+  mason: ^0.1.0
+
+vars:
+  name:
+    type: string
+    description: The name of the package.
+    default: your_package_name_snake_case
+    prompt: Please enter the package name.
+  classname:
+    type: string
+    description: The name of the class.
+    default: your_package_name_snake_case
+    prompt: Please enter the package name.
+  domainPackage:
+    type: string
+    description: The name of the domain package (for presentation layer).
+    default: your_package_name_domain
+    prompt: Please enter the domain package name.

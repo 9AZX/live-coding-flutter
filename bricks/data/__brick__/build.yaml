@@ -1,0 +1,11 @@
+targets:
+  $default:
+    builders:
+      riverpod_generator:
+        generate_for:
+          - "**/*.br.dart"
+      json_serializable:
+        options:
+          field_rename: snake
+        generate_for:
+          - "**/*.br.dart"

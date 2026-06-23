@@ -1,0 +1,36 @@
+name: flutter_workspace
+description: Workspace de l'exercice de live coding Flutter (archi Betclic flutter-front).
+publish_to: "none"
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.10.0 <4.0.0"
+
+# Dart pub workspace : chaque app et chaque package résolvent leurs deps ensemble.
+workspace:
+  - apps/*
+  - packages/**/*
+
+dev_dependencies:
+  melos: ^7.3.0
+  very_good_analysis: ^6.0.0
+
+melos:
+  name: flutter_workspace
+
+  scripts:
+    bs:
+      run: melos bootstrap
+      description: Bootstrap de tous les packages.
+
+    analyze:
+      run: melos exec -- dart analyze .
+      description: Analyse statique sur tout le workspace.
+
+    test:
+      run: melos exec --dir-exists=test -- flutter test
+      description: Lance les tests de tous les packages qui en ont.
+
+    generate:
+      run: melos exec --depends-on=build_runner -- dart run build_runner build --delete-conflicting-outputs
+      description: Génère le code (riverpod, freezed, auto_route, theme_tailor).
