@@ -1,257 +1,305 @@
-# Workshop — reconstruire la feature « Détail d'un match »
+# 🏟️ Workshop Flutter — Reconstruire la page « Détail d'un match »
 
-Tutoriel pas-à-pas. L'app de départ **compile et tourne** (`flutter run` depuis
-`apps/foot_scores`) : feed des matchs du jour (Coupe du Monde), onglets
-Hier/Aujourd'hui/Demain, filtres, favoris. **Il manque le détail** : taper une
-ligne ne fait rien.
+Bienvenue ! Ce dépôt est une app de scores foot (Coupe du Monde) déjà
+fonctionnelle… **sauf une chose** : quand tu tapes sur un match, rien ne se
+passe. La page de détail a été retirée. **À toi de la reconstruire**, couche par
+couche.
 
-Objectif : reconstruire la tranche verticale complète, **dans l'ordre des
-couches** — shared_domain → data → routing → Mason (nouvelle feature) →
-présentation → composition.
-
-> Astuce : `grep -rn WORKSHOP packages` liste tous les points d'ancrage laissés
-> en commentaire dans le code.
+C'est un exercice guidé : suis les étapes dans l'ordre, vérifie à chaque fois
+que ça compile, et pose des questions.
 
 ---
 
-## Rappel de l'architecture (où va quoi)
+## 🎯 Ce que tu vas construire
+
+Taper une ligne de match → une page **Détail** s'ouvre, avec :
+- un en-tête (les 2 équipes, le score ou « VS », le statut) ;
+- un onglet **Résumé** (la timeline : buts, cartons) ;
+- un onglet **Compo** (les compositions des deux équipes).
+
+Au passage tu vas toucher **toutes les couches** d'une vraie archi Flutter :
+domaine, data (+ DTO), présentation, navigation, injection de dépendances.
+
+---
+
+## 🗺️ L'architecture en un coup d'œil
 
 ```
-packages/
-├── shared_domain/scores/domain/        # entités + interfaces repo + use cases (partagé)
-├── dsm/tactics_theme/                  # palette + TacticsIcon
-├── utilities/widget_factory/…          # WidgetFactory<T>
-├── features/scores/
-│   ├── matchs/{data,presentation}      # data = impl ScoresRepository ; presentation = UI partagée + thème
-│   ├── live/presentation               # fin : consomme des WidgetFactory injectées
-│   ├── favorites/{data,domain,presentation}
-│   └── match_detail/presentation       # ← À CRÉER
-└── composition/{scores_shell, composition_root}
+shared_domain/scores/domain   →  les "règles" : entités (Match…) + interfaces + use cases
+features/scores/
+  matchs/data                 →  l'implémentation réelle (API TheSportsDB)
+  matchs/presentation         →  l'UI partagée (widgets, thème) + la page Matchs
+  live / favorites            →  les autres onglets
+  match_detail/presentation   →  ⛔ À CRÉER (la page de détail)
+composition/                  →  assemble les features entre elles
 ```
 
-Règles : une feature n'importe **jamais** une autre feature. Le partagé passe
-par `shared_domain` (domaine) ou par une `WidgetFactory` injectée (UI).
-Chaque couche annotée `@riverpod` se régénère avec `build_runner`.
+**Règle d'or** : une feature **n'importe jamais** une autre feature. Ce qui est
+partagé passe soit par `shared_domain`, soit par **injection** (on verra).
 
 ---
 
-## Étape 1 — shared_domain : le contrat
+## 🧰 Avant de commencer
 
-📁 `packages/shared_domain/scores/domain`
+Commandes que tu vas répéter :
 
-1. `lib/src/repositories/scores_repository.dart` — ajouter au contrat :
-   ```dart
-   Stream<Match?> watchMatch(String id);
-   ```
-2. `lib/src/providers.dart` — exposer le use case (remplace le `// WORKSHOP`) :
-   ```dart
-   @riverpod
-   Stream<Match?> watchMatch(Ref ref, String id) =>
-       ref.watch(scoresRepositoryProvider).watchMatch(id);
-   ```
-   Les entités `MatchEvent`, `Lineup`, `Player` et les champs `Match.events` /
-   `Match.lineups` **existent déjà** — rien à créer côté entités.
-3. Régénérer :
-   ```bash
-   cd packages/shared_domain/scores/domain && dart run build_runner build --delete-conflicting-outputs
-   ```
+```bash
+# (re)générer le code après avoir touché un fichier annoté @riverpod / @freezed
+# Ou utilise package sur VSCode build runner context menu (fait par votre serviteur)
+cd <le_package_modifié> && dart run build_runner build --delete-conflicting-outputs
 
-À ce stade tout casse côté data (l'impl ne satisfait plus l'interface) → étape 2.
+# lancer l'app
+cd apps/foot_scores && flutter run
+```
+
+> 💡 À chaque étape, des commentaires `// WORKSHOP` dans le code te montrent
+> exactement où écrire. Pour tous les lister :
+> ```bash
+> grep -rn "WORKSHOP" packages
+> ```
 
 ---
 
-## Étape 2 — data : l'implémentation (TheSportsDB)
+## Étape 1 — Le contrat 📜  (`shared_domain/scores/domain`)
 
-📁 `packages/features/scores/matchs/data`
+**Objectif** : déclarer *quoi* on veut, sans dire *comment*.
 
-1. `lib/src/api/the_sports_db_client.dart` — ajouter les 3 endpoints du détail
-   (le helper `_list` existe déjà) :
-   ```dart
-   Future<List<Map<String, dynamic>>> timeline(String eventId) =>
-       _list('/lookuptimeline.php', {'id': eventId}, key: 'timeline');
-   Future<List<Map<String, dynamic>>> lineup(String eventId) =>
-       _list('/lookuplineup.php', {'id': eventId}, key: 'lineup');
-   Future<Map<String, dynamic>?> event(String eventId) async =>
-       (await _list('/lookupevent.php', {'id': eventId}, key: 'events')).firstOrNull;
-   ```
+**Fichier** `lib/src/repositories/scores_repository.dart`
+Ajoute une méthode à l'interface (remplace le `// WORKSHOP`) :
+```dart
+Stream<Match?> watchMatch(String id);
+```
 
-2. **🟢 EXERCICE DTO — créer `TimelineEntryDto`.** Le feed utilise déjà un DTO
-   propre `lib/src/dtos/event_dto.br.dart` (freezed + json_serializable, champs
-   mappés via `@JsonKey(name: …)`) : c'est ton **modèle**. À toi de faire pareil
-   pour la timeline, à partir de ce vrai JSON renvoyé par `lookuptimeline.php` :
-   ```json
-   {
-     "idTimeline": "1792473",
-     "idEvent": "2267452",
-     "strTimeline": "Card",
-     "strTimelineDetail": "Yellow Card",
-     "strHome": "No",
-     "intTime": "10",
-     "strPlayer": "Jaka Bijol",
-     "strAssist": ""
-   }
-   ```
-   Crée `lib/src/dtos/timeline_entry_dto.br.dart` sur le modèle d'`EventDto` :
-   ```dart
-   @freezed
-   abstract class TimelineEntryDto with _$TimelineEntryDto {
-     const factory TimelineEntryDto({
-       @JsonKey(name: 'strTimeline') String? type,
-       @JsonKey(name: 'strTimelineDetail') String? detail,
-       @JsonKey(name: 'strHome') String? home,
-       @JsonKey(name: 'intTime') String? minute,
-       @JsonKey(name: 'strPlayer') String? player,
-       @JsonKey(name: 'strAssist') String? assist,
-     }) = _TimelineEntryDto;
-     factory TimelineEntryDto.fromJson(Map<String, dynamic> json) => _$TimelineEntryDtoFromJson(json);
-   }
-   ```
-   (Même exercice pour `LineupEntryDto` : `strHome`, `strSubstitute`, `strPlayer`,
-   `intSquadNumber`.)
+**Fichier** `lib/src/providers.dart`
+Expose le use case :
+```dart
+@riverpod
+Stream<Match?> watchMatch(Ref ref, String id) =>
+    ref.watch(scoresRepositoryProvider).watchMatch(id);
+```
 
-3. `lib/src/api/the_sports_db_mapper.dart` — ajouter `toEvents` / `toLineups` qui
-   prennent les **DTOs** (plus de `Map`) :
-   ```dart
-   List<MatchEvent> toEvents(List<TimelineEntryDto> timeline) => [ … ];
-   List<Lineup> toLineups(List<LineupEntryDto> lineup,
-       {required Team home, required Team away,
-        required String homeFormation, required String awayFormation}) => [ … ];
-   ```
+> Les entités `MatchEvent`, `Lineup`, `Player` et les champs `Match.events` /
+> `Match.lineups` **existent déjà**. Rien à créer côté entités. 🎁
 
-4. `lib/src/data_sources/the_sports_db_scores_data_source.dart` — `watchMatch`
-   (one-shot) : décoder les DTOs (`EventDto.fromJson`, `TimelineEntryDto.fromJson`,
-   `LineupEntryDto.fromJson`) puis `mapper.toMatch(base, events:…, lineups:…)` :
-   ```dart
-   @override
-   Stream<Match?> watchMatch(String id) => Stream.fromFuture(_fetchDetail(id));
-   ```
-
-5. Régénérer (freezed + json + riverpod) :
-   ```bash
-   cd packages/features/scores/matchs/data && dart run build_runner build --delete-conflicting-outputs
-   ```
+**✅ Vérifie**
+```bash
+cd packages/shared_domain/scores/domain && dart run build_runner build --delete-conflicting-outputs
+```
+👉 Un `flutter analyze` global va maintenant **râler** : l'implémentation ne
+respecte plus le contrat. **C'est normal** — on la corrige à l'étape 2.
 
 ---
 
-## Étape 3 — routing : rendre la ligne cliquable
+## Étape 2 — La donnée 🔌  (`features/scores/matchs/data`)
 
-📁 `packages/features/scores/matchs/presentation` (propriétaire de `MatchRow`)
+**Objectif** : aller chercher les vraies données sur l'API et les transformer.
 
-1. Créer le **port** `lib/src/routing/scores_routing.dart` :
+### 2.1 — Les appels API
+**Fichier** `lib/src/api/the_sports_db_client.dart` (le helper `_list` existe déjà) :
+```dart
+Future<List<Map<String, dynamic>>> timeline(String eventId) =>
+    _list('/lookuptimeline.php', {'id': eventId}, key: 'timeline');
+Future<List<Map<String, dynamic>>> lineup(String eventId) =>
+    _list('/lookuplineup.php', {'id': eventId}, key: 'lineup');
+Future<Map<String, dynamic>?> event(String eventId) async =>
+    (await _list('/lookupevent.php', {'id': eventId}, key: 'events')).firstOrNull;
+```
+
+### 2.2 — 🟢 EXERCICE : ton premier DTO
+Un **DTO** = une classe typée qui représente le JSON de l'API (au lieu de
+manipuler des `Map` à l'aveugle).
+
+👀 **Regarde le modèle déjà fait** : `lib/src/dtos/event_dto.br.dart`
+(c'est un DTO `freezed` + `json_serializable`, chaque champ JSON est mappé avec
+`@JsonKey(name: '...')`).
+
+🎯 **À toi** : crée `lib/src/dtos/timeline_entry_dto.br.dart` à partir de ce vrai
+JSON renvoyé par l'API :
+```json
+{
+  "strTimeline": "Card",
+  "strTimelineDetail": "Yellow Card",
+  "strHome": "No",
+  "intTime": "10",
+  "strPlayer": "Jaka Bijol",
+  "strAssist": ""
+}
+```
+Sur le même modèle qu'`EventDto` :
+```dart
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'timeline_entry_dto.br.freezed.dart';
+part 'timeline_entry_dto.br.g.dart';
+
+@freezed
+abstract class TimelineEntryDto with _$TimelineEntryDto {
+  const factory TimelineEntryDto({
+    @JsonKey(name: 'strTimeline') String? type,
+    @JsonKey(name: 'strTimelineDetail') String? detail,
+    @JsonKey(name: 'strHome') String? home,
+    @JsonKey(name: 'intTime') String? minute,
+    @JsonKey(name: 'strPlayer') String? player,
+    @JsonKey(name: 'strAssist') String? assist,
+  }) = _TimelineEntryDto;
+
+  factory TimelineEntryDto.fromJson(Map<String, dynamic> json) =>
+      _$TimelineEntryDtoFromJson(json);
+}
+```
+> 🏅 **Bonus** : fais pareil pour `LineupEntryDto` (`strHome`, `strSubstitute`,
+> `strPlayer`, `intSquadNumber`).
+
+### 2.3 — Le mapper (DTO → entité du domaine)
+**Fichier** `lib/src/api/the_sports_db_mapper.dart` : ajoute `toEvents` /
+`toLineups` qui prennent les **DTOs** (un but = `strTimeline == 'Goal'`, équipe à
+domicile = `strHome == 'Yes'`).
+
+### 2.4 — Implémenter le contrat
+**Fichier** `lib/src/data_sources/the_sports_db_scores_data_source.dart` :
+```dart
+@override
+Stream<Match?> watchMatch(String id) => Stream.fromFuture(_fetchDetail(id));
+// _fetchDetail : event + timeline + lineup → mapper.toMatch(base, events:…, lineups:…)
+```
+
+**✅ Vérifie**
+```bash
+cd packages/features/scores/matchs/data && dart run build_runner build --delete-conflicting-outputs
+flutter analyze   # l'erreur de l'étape 1 doit disparaître ✅
+```
+
+---
+
+## Étape 3 — Le clic 👆  (`features/scores/matchs/presentation`)
+
+**Objectif** : rendre une ligne de match cliquable, **sans** que `matchs` ne
+connaisse la page de détail. On passe par un **port** (une interface de
+navigation) ; l'implémentation viendra de la composition (étape 6).
+
+1. Crée le port `lib/src/routing/scores_routing.dart` :
    ```dart
    abstract interface class ScoresRouting {
      void onMatchSelected(BuildContext context, String matchId);
    }
    ```
-2. Créer le **stub** `lib/src/routing/providers_di.dart` :
+2. Crée le stub `lib/src/routing/providers_di.dart` :
    ```dart
    @riverpod
    ScoresRouting scoresRouting(Ref ref) =>
-       throw UnimplementedError('scoresRoutingProvider must be overridden');
+       throw UnimplementedError('scoresRoutingProvider doit être overridé');
    ```
-3. `lib/src/widgets/match_row.dart` — envelopper la rangée d'un `GestureDetector`
-   (remplace le `// WORKSHOP`) :
+3. Dans `lib/src/widgets/match_row.dart` (remplace le `// WORKSHOP`), enveloppe
+   la rangée :
    ```dart
    GestureDetector(
      behavior: HitTestBehavior.opaque,
      onTap: () => ref.read(scoresRoutingProvider).onMatchSelected(context, match.id),
-     child: /* la Container existante */,
+     child: /* le Container existant */,
    )
    ```
-4. Exporter le port dans `lib/matchs_presentation.dart`
-   (`export 'src/routing/scores_routing.dart';` + `export 'src/routing/providers_di.dart';`)
-   et régénérer :
-   ```bash
-   cd packages/features/scores/matchs/presentation && dart run build_runner build --delete-conflicting-outputs
-   ```
+4. Exporte le port + le provider dans `lib/matchs_presentation.dart`.
+
+**✅ Vérifie**
+```bash
+cd packages/features/scores/matchs/presentation && dart run build_runner build --delete-conflicting-outputs
+```
 
 ---
 
-## Étape 4 — Mason : scaffolder la feature
+## Étape 4 — Créer la feature 🏗️  (Mason)
 
 ```bash
 mason make presentation
 # → packages/features/scores/match_detail/presentation
 ```
-
-Ajuster `pubspec.yaml` : `name: match_detail_presentation`, `resolution: workspace`,
-deps `flutter`, `flutter_riverpod`, `scores_domain`, `tactics_theme`
-(+ `riverpod_annotation`, `build_runner`/`riverpod_generator` si tu ajoutes un thème).
+Renomme/ajuste le `pubspec.yaml` : `name: match_detail_presentation`,
+`resolution: workspace`, et les dépendances (`flutter`, `flutter_riverpod`,
+`scores_domain`, `tactics_theme`).
 
 ---
 
-## Étape 5 — présentation : la page Détail
+## Étape 5 — La page 🎨  (`features/scores/match_detail/presentation`)
 
-📁 `packages/features/scores/match_detail/presentation`
+**Objectif** : afficher le détail. La feature **possède ses propres widgets**
+(elle ne pioche pas dans `matchs`).
 
-La feature **possède ses propres widgets** (elle ne réutilise pas ceux de
-matchs → pas d'import feature→feature). Elle lit la palette via
-`tacticsPaletteProvider` (ou un `MatchDetailTheme` maison construit dans
-`providers_internal`, comme matchs le fait pour son thème).
-
-1. `lib/src/widgets/event_tile.dart` — une ligne de timeline (`MatchEvent` :
-   minute, icône but/carton, joueur, équipe).
-2. `lib/src/widgets/lineup_section.dart` — une `Lineup` (badge + nom + formation
-   + onze).
-3. `lib/src/match_detail_page.dart` — `ConsumerStatefulWidget` :
+1. `lib/src/widgets/event_tile.dart` — une ligne de timeline (minute, icône
+   but/carton, joueur).
+2. `lib/src/widgets/lineup_section.dart` — une composition (équipe + onze).
+3. `lib/src/match_detail_page.dart` — `ConsumerWidget` :
    ```dart
-   final match = ref.watch(watchMatchProvider(widget.matchId));
-   // .when(loading/error/data) → en-tête (score / VS / statut) + onglets
-   //   Résumé (match.events) et Compo (match.lineups), états vides sinon.
+   final match = ref.watch(watchMatchProvider(matchId));
+   return match.when(
+     loading: ...,           // un loader
+     error: ...,             // un message
+     data: (m) => ...,       // en-tête + onglets Résumé (m!.events) / Compo (m.lineups)
+   );
    ```
 4. Barrel `lib/match_detail_presentation.dart` → `export 'src/match_detail_page.dart';`
-5. Régénérer si tu as mis des `@riverpod` (thème) :
-   ```bash
-   cd packages/features/scores/match_detail/presentation && dart run build_runner build --delete-conflicting-outputs
-   ```
+
+**✅ Vérifie** : `flutter analyze` (le package doit compiler seul).
 
 ---
 
-## Étape 6 — composition : brancher la navigation
+## Étape 6 — Brancher la navigation 🔗  (`composition/composition_root`)
 
-📁 `packages/composition/composition_root`
+**Objectif** : connecter le port (étape 3) à la vraie page (étape 5). C'est **le
+seul endroit** qui connaît les deux features à la fois.
 
-1. Implémenter le port (nouveau fichier `lib/src/app_scores_routing.dart`) :
+1. Nouveau `lib/src/app_scores_routing.dart` :
    ```dart
    class AppScoresRouting implements ScoresRouting {
      const AppScoresRouting();
      @override
      void onMatchSelected(BuildContext context, String matchId) =>
          Navigator.of(context).push(MaterialPageRoute<void>(
-           builder: (_) => MatchDetailPage(matchId: matchId)));
+           builder: (_) => MatchDetailPage(matchId: matchId),
+         ));
    }
    ```
-2. `lib/src/providers.dart` — ajouter l'override dans `scoresAppOverrides()` :
+2. Dans `lib/src/providers.dart`, ajoute l'override dans `scoresAppOverrides()` :
    ```dart
    scoresRoutingProvider.overrideWithValue(const AppScoresRouting()),
    ```
-3. `pubspec.yaml` — ajouter les deps `match_detail_presentation` et (déjà là)
-   `matchs_presentation` (pour le port `ScoresRouting`).
+3. `pubspec.yaml` : ajoute les deps `match_detail_presentation` et
+   `matchs_presentation`.
 
 ---
 
-## Étape 7 — lancer & vérifier
+## Étape 7 — Lancer 🎉
 
 ```bash
 flutter pub get
-flutter analyze            # 0 issue attendu
+flutter analyze            # objectif : "No issues found!"
 cd apps/foot_scores && flutter run
 ```
-
-Tape une ligne de match → la page Détail s'ouvre (Résumé + Compo). ✅
+Tape un match → la page Détail s'ouvre. **Bravo !** 🥳
 
 ---
 
-## Points pédagogiques à marteler
+## 🧠 Ce qu'il faut retenir
 
-- **L'ordre des couches** : on part du contrat (`shared_domain`), puis l'impl
-  (`data`), puis l'UI (`presentation`), puis le câblage (`composition`).
-- **Aucune feature n'importe une autre** : `match_detail` ne connaît pas
-  `matchs`. La navigation passe par le **port** `ScoresRouting` (déclaré côté
-  matchs, implémenté en composition).
-- **`shared_domain` = domaine seul** ; l'implémentation du repo vit dans la data
-  d'une feature.
-- **Le thème est porté par la feature** (construit depuis la palette), pas par un
-  theme_manager.
-- **Riverpod codegen** : à chaque ajout/suppression de `@riverpod`, relancer
-  `build_runner` dans le package concerné.
+1. **On code de l'intérieur vers l'extérieur** : le contrat (domaine) d'abord,
+   puis la data, puis l'UI, puis le câblage.
+2. **Une feature n'en importe jamais une autre.** La page Matchs ne connaît pas
+   la page Détail : elle émet une *intention* via le **port** `ScoresRouting`,
+   et la **composition** décide quoi faire.
+3. **Un DTO** isole le JSON de l'API du reste du code : si l'API change, tu ne
+   corriges qu'un seul endroit.
+4. **`build_runner`** régénère le code annoté (`@riverpod`, `@freezed`) — relance-le
+   à chaque fois que `analyze` parle de `_$...` ou de `.g.dart`.
+
+---
+
+## 🆘 Si ça coince
+
+- **`The method '…' isn't defined` / `Missing concrete implementation`** → tu as
+  changé une interface mais pas (encore) l'implémentation, ou il faut relancer
+  `build_runner`.
+- **`Target of URI doesn't exist: '….g.dart'`** → lance `build_runner` dans ce
+  package.
+- **L'écran est vide / une erreur réseau** → regarde la console, les logs
+  `[thesportsdb]` montrent chaque appel API et son résultat.
+- **Perdu ?** → `grep -rn "WORKSHOP" packages` pour retrouver tous les points à
+  compléter.
