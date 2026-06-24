@@ -1,0 +1,17 @@
+name: scores_domain
+description: Common domain partagé par les features Scores (entités, interfaces, use cases).
+publish_to: "none"
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.10.0-0 <4.0.0"
+
+resolution: workspace
+
+dependencies:
+  riverpod: ^3.2.1
+  riverpod_annotation: ^4.0.2
+
+dev_dependencies:
+  build_runner: ^2.11.1
+  riverpod_generator: ^4.0.3

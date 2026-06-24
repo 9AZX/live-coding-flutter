@@ -1,0 +1,16 @@
+name: scores_router
+description: Composition — implémentation du routing inter-features.
+publish_to: "none"
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.10.0-0 <4.0.0"
+
+resolution: workspace
+
+dependencies:
+  flutter:
+    sdk: flutter
+  match_detail_presentation:
+  riverpod_annotation: ^4.0.2
+  scores_widgets:

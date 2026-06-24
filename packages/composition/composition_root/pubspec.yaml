@@ -1,0 +1,16 @@
+name: composition_root
+description: Composition — agrège overrides + shell pour l'app.
+publish_to: "none"
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.10.0-0 <4.0.0"
+
+resolution: workspace
+
+dependencies:
+  riverpod_annotation: ^4.0.2
+  scores_data:
+  scores_router:
+  scores_shell:
+  theme_manager:

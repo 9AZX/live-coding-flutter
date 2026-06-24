@@ -1,0 +1,33 @@
+name: tactics_theme
+description: Design System (tokens, palette, polices Betclic) — équivalent local de tactics_providers.
+publish_to: "none"
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.10.0-0 <4.0.0"
+
+resolution: workspace
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^3.2.1
+  riverpod_annotation: ^4.0.2
+
+dev_dependencies:
+  build_runner: ^2.11.1
+  riverpod_generator: ^4.0.3
+
+flutter:
+  assets:
+    - assets/icons/
+    - assets/nav/
+  fonts:
+    - family: Betclic
+      fonts:
+        - asset: assets/fonts/Betclic.ttf
+    # ponytail: la VF couvre les graisses ; "Betclic Expanded" retombe sur Betclic.
+    #           Ajouter les .ttf Expanded statiques du design pour la fidélité totale.
+    - family: Betclic Expanded
+      fonts:
+        - asset: assets/fonts/Betclic.ttf

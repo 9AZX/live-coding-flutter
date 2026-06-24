@@ -1,0 +1,16 @@
+name: theme_manager
+description: Composition — construit les thèmes des features depuis la palette DSM.
+publish_to: "none"
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.10.0-0 <4.0.0"
+
+resolution: workspace
+
+dependencies:
+  flutter:
+    sdk: flutter
+  riverpod_annotation: ^4.0.2
+  scores_widgets:
+  tactics_theme:

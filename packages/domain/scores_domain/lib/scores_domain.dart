@@ -1,0 +1,12 @@
+export 'src/behaviours/group_matches.dart';
+export 'src/entities/competition.dart';
+export 'src/entities/lineup.dart';
+export 'src/entities/match.dart';
+export 'src/entities/match_event.dart';
+export 'src/entities/match_filter.dart';
+export 'src/entities/match_group.dart';
+export 'src/entities/team.dart';
+export 'src/providers.dart';
+export 'src/providers_di.dart';
+export 'src/repositories/favorites_repository.dart';
+export 'src/repositories/scores_repository.dart';

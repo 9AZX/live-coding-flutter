@@ -1,0 +1,19 @@
+name: live_presentation
+description: Feature En direct (matchs live).
+publish_to: "none"
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.10.0-0 <4.0.0"
+
+resolution: workspace
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^3.2.1
+  scores_domain:
+  scores_widgets:
+
+flutter:
+  uses-material-design: true
