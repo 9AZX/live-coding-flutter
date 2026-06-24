@@ -15,7 +15,13 @@ final scoresRepositoryProvider = ScoresRepositoryProvider._();
 
 /// Dépendances entrantes : la couche data les override (composition).
 
-final class ScoresRepositoryProvider extends $FunctionalProvider<ScoresRepository, ScoresRepository, ScoresRepository>
+final class ScoresRepositoryProvider
+    extends
+        $FunctionalProvider<
+          ScoresRepository,
+          ScoresRepository,
+          ScoresRepository
+        >
     with $Provider<ScoresRepository> {
   /// Dépendances entrantes : la couche data les override (composition).
   ScoresRepositoryProvider._()
@@ -34,7 +40,8 @@ final class ScoresRepositoryProvider extends $FunctionalProvider<ScoresRepositor
 
   @$internal
   @override
-  $ProviderElement<ScoresRepository> $createElement($ProviderPointer pointer) => $ProviderElement(pointer);
+  $ProviderElement<ScoresRepository> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
 
   @override
   ScoresRepository create(Ref ref) {
@@ -56,7 +63,12 @@ String _$scoresRepositoryHash() => r'663ac6c8485e3e6553bde566140960d40d529573';
 final favoritesRepositoryProvider = FavoritesRepositoryProvider._();
 
 final class FavoritesRepositoryProvider
-    extends $FunctionalProvider<FavoritesRepository, FavoritesRepository, FavoritesRepository>
+    extends
+        $FunctionalProvider<
+          FavoritesRepository,
+          FavoritesRepository,
+          FavoritesRepository
+        >
     with $Provider<FavoritesRepository> {
   FavoritesRepositoryProvider._()
     : super(
@@ -92,4 +104,5 @@ final class FavoritesRepositoryProvider
   }
 }
 
-String _$favoritesRepositoryHash() => r'5206b82bb947605acbd25abc9b49cb77c5ee2326';
+String _$favoritesRepositoryHash() =>
+    r'5206b82bb947605acbd25abc9b49cb77c5ee2326';

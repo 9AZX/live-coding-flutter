@@ -2,6 +2,7 @@ export 'src/behaviours/group_matches.dart';
 export 'src/entities/competition.dart';
 export 'src/entities/lineup.dart';
 export 'src/entities/match.dart';
+export 'src/entities/match_day.dart';
 export 'src/entities/match_event.dart';
 export 'src/entities/match_filter.dart';
 export 'src/entities/match_group.dart';

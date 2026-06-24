@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:matchs_presentation/src/scores_filter_notifier.dart';
+import 'package:matchs_presentation/src/selected_day_notifier.dart';
 import 'package:scores_domain/scores_domain.dart';
 import 'package:scores_widgets/scores_widgets.dart';
 
@@ -18,8 +19,9 @@ class FilterChips extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selected = ref.watch(scoresFilterProvider);
+    final day = ref.watch(selectedDayProvider);
     final counts = ref
-        .watch(watchMatchGroupsProvider(MatchFilter.all))
+        .watch(watchMatchGroupsProvider(MatchFilter.all, day))
         .maybeWhen(
           data: _countByFilter,
           orElse: () => const <MatchFilter, int>{},

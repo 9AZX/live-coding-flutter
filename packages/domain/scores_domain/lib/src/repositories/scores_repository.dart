@@ -1,9 +1,9 @@
 import 'package:scores_domain/src/entities/match.dart';
+import 'package:scores_domain/src/entities/match_day.dart';
 
 abstract interface class ScoresRepository {
-  /// Flux des matchs ; émet à nouveau quand un score / une minute live change.
-  Stream<List<Match>> watchMatches();
+  /// Flux des matchs du jour demandé ; émet à nouveau quand un score change.
+  Stream<List<Match>> watchMatches(MatchDay day);
 
-  /// Flux d'un match précis (détail) ; `null` si l'id est inconnu.
-  Stream<Match?> watchMatch(String id);
+  // WORKSHOP : `Stream<Match?> watchMatch(String id)` (détail) à reconstruire ici.
 }

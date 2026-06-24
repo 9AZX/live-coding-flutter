@@ -9,7 +9,7 @@ class LivePage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final groups = ref.watch(watchMatchGroupsProvider(MatchFilter.live));
+    final groups = ref.watch(watchMatchGroupsProvider(MatchFilter.live, MatchDay.today));
 
     return Column(
       children: [

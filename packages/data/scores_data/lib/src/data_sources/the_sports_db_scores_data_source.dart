@@ -1,0 +1,49 @@
+import 'dart:developer' as developer;
+
+import 'package:scores_data/src/api/the_sports_db_client.dart';
+import 'package:scores_data/src/api/the_sports_db_config.dart';
+import 'package:scores_data/src/api/the_sports_db_mapper.dart';
+import 'package:scores_domain/scores_domain.dart';
+
+/// Source de données réelle TheSportsDB. Implémente la même interface que les
+/// autres sources : seule la couche data change.
+///
+/// WORKSHOP : `watchMatch(id)` (détail) à reconstruire — récupérer l'event, sa
+/// timeline et ses compositions, puis mapper vers un `Match` enrichi.
+class TheSportsDbScoresDataSource implements ScoresRepository {
+  TheSportsDbScoresDataSource({TheSportsDbClient? client, TheSportsDbMapper mapper = const TheSportsDbMapper()})
+    : _client = client ?? TheSportsDbClient(),
+      _mapper = mapper;
+
+  final TheSportsDbClient _client;
+  final TheSportsDbMapper _mapper;
+
+  @override
+  Stream<List<Match>> watchMatches(MatchDay day) => Stream.fromFuture(_fetchFeed(day));
+
+  Future<List<Match>> _fetchFeed(MatchDay day) async {
+    final date = _dateFor(day);
+    final matches = <Match>[];
+
+    for (final leagueId in TheSportsDbConfig.leagueIds) {
+      final raws = await _client.eventsDay(date, leagueId)
+        ..sort((a, b) => '${a['strTimestamp']}'.compareTo('${b['strTimestamp']}'));
+
+      matches.addAll(raws.map(_mapper.toMatch));
+    }
+
+    developer.log(
+      'feed: ${matches.length} matchs du $date (ligues ${TheSportsDbConfig.leagueIds})',
+      name: 'thesportsdb',
+    );
+
+    return matches;
+  }
+
+  // ponytail: date via l'horloge appareil (en prod : source NTP type Kronos).
+  String _dateFor(MatchDay day) {
+    final date = DateTime.now().add(Duration(days: day.offset));
+
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  }
+}

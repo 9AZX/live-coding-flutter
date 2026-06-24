@@ -11,6 +11,5 @@ resolution: workspace
 dependencies:
   riverpod_annotation: ^4.0.2
   scores_data:
-  scores_router:
   scores_shell:
   theme_manager:

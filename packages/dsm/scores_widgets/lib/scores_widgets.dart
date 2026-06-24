@@ -1,5 +1,4 @@
 export 'src/providers_di.dart';
-export 'src/routing/scores_routing.dart';
 export 'src/theme/scores_theme.dart';
 export 'src/widgets/competition_header.dart';
 export 'src/widgets/empty_state.dart';

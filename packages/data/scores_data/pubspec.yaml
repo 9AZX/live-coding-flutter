@@ -9,6 +9,7 @@ environment:
 resolution: workspace
 
 dependencies:
+  dio: ^5.7.0
   riverpod: ^3.2.1
   riverpod_annotation: ^4.0.2
   scores_domain:

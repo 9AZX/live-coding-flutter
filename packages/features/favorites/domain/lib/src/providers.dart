@@ -8,7 +8,8 @@ part 'providers.g.dart';
 @riverpod
 List<Match> favoriteMatches(Ref ref) {
   final ids = ref.watch(favoriteMatchIdsProvider).value ?? const <String>{};
-  final matches = ref.watch(watchMatchesProvider).value ?? const <Match>[];
+  // Favoris résolus sur les matchs du jour (limite assumée : pas de cross-jour).
+  final matches = ref.watch(watchMatchesProvider(MatchDay.today)).value ?? const <Match>[];
 
   return [
     for (final match in matches)

@@ -8,29 +8,42 @@ part of 'providers.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Flux brut de tous les matchs.
+/// Flux des matchs d'un jour donné (une seule souscription par jour).
 
 @ProviderFor(watchMatches)
-final watchMatchesProvider = WatchMatchesProvider._();
+final watchMatchesProvider = WatchMatchesFamily._();
 
-/// Flux brut de tous les matchs.
+/// Flux des matchs d'un jour donné (une seule souscription par jour).
 
-final class WatchMatchesProvider extends $FunctionalProvider<AsyncValue<List<Match>>, List<Match>, Stream<List<Match>>>
+final class WatchMatchesProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<Match>>,
+          List<Match>,
+          Stream<List<Match>>
+        >
     with $FutureModifier<List<Match>>, $StreamProvider<List<Match>> {
-  /// Flux brut de tous les matchs.
-  WatchMatchesProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'watchMatchesProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
+  /// Flux des matchs d'un jour donné (une seule souscription par jour).
+  WatchMatchesProvider._({
+    required WatchMatchesFamily super.from,
+    required MatchDay super.argument,
+  }) : super(
+         retry: null,
+         name: r'watchMatchesProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
 
   @override
   String debugGetCreateSourceHash() => _$watchMatchesHash();
+
+  @override
+  String toString() {
+    return r'watchMatchesProvider'
+        ''
+        '($argument)';
+  }
 
   @$internal
   @override
@@ -40,26 +53,67 @@ final class WatchMatchesProvider extends $FunctionalProvider<AsyncValue<List<Mat
 
   @override
   Stream<List<Match>> create(Ref ref) {
-    return watchMatches(ref);
+    final argument = this.argument as MatchDay;
+    return watchMatches(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is WatchMatchesProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
   }
 }
 
-String _$watchMatchesHash() => r'a73a7c8bb8fe3db43990e5b5d0c765025d0b6fbe';
+String _$watchMatchesHash() => r'6e37cfb3e21c8a654d5529be4c34e058b98e433e';
 
-/// Matchs filtrés et regroupés par compétition (Matchs + En direct).
+/// Flux des matchs d'un jour donné (une seule souscription par jour).
+
+final class WatchMatchesFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<List<Match>>, MatchDay> {
+  WatchMatchesFamily._()
+    : super(
+        retry: null,
+        name: r'watchMatchesProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Flux des matchs d'un jour donné (une seule souscription par jour).
+
+  WatchMatchesProvider call(MatchDay day) =>
+      WatchMatchesProvider._(argument: day, from: this);
+
+  @override
+  String toString() => r'watchMatchesProvider';
+}
+
+/// Matchs filtrés et regroupés par compétition, dérivés de [watchMatches]
+/// (pas de fetch supplémentaire). Utilisé par Matchs + En direct + les compteurs.
 
 @ProviderFor(watchMatchGroups)
 final watchMatchGroupsProvider = WatchMatchGroupsFamily._();
 
-/// Matchs filtrés et regroupés par compétition (Matchs + En direct).
+/// Matchs filtrés et regroupés par compétition, dérivés de [watchMatches]
+/// (pas de fetch supplémentaire). Utilisé par Matchs + En direct + les compteurs.
 
 final class WatchMatchGroupsProvider
-    extends $FunctionalProvider<AsyncValue<List<MatchGroup>>, List<MatchGroup>, Stream<List<MatchGroup>>>
-    with $FutureModifier<List<MatchGroup>>, $StreamProvider<List<MatchGroup>> {
-  /// Matchs filtrés et regroupés par compétition (Matchs + En direct).
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<MatchGroup>>,
+          AsyncValue<List<MatchGroup>>,
+          AsyncValue<List<MatchGroup>>
+        >
+    with $Provider<AsyncValue<List<MatchGroup>>> {
+  /// Matchs filtrés et regroupés par compétition, dérivés de [watchMatches]
+  /// (pas de fetch supplémentaire). Utilisé par Matchs + En direct + les compteurs.
   WatchMatchGroupsProvider._({
     required WatchMatchGroupsFamily super.from,
-    required MatchFilter super.argument,
+    required (MatchFilter, MatchDay) super.argument,
   }) : super(
          retry: null,
          name: r'watchMatchGroupsProvider',
@@ -75,19 +129,27 @@ final class WatchMatchGroupsProvider
   String toString() {
     return r'watchMatchGroupsProvider'
         ''
-        '($argument)';
+        '$argument';
   }
 
   @$internal
   @override
-  $StreamProviderElement<List<MatchGroup>> $createElement(
+  $ProviderElement<AsyncValue<List<MatchGroup>>> $createElement(
     $ProviderPointer pointer,
-  ) => $StreamProviderElement(pointer);
+  ) => $ProviderElement(pointer);
 
   @override
-  Stream<List<MatchGroup>> create(Ref ref) {
-    final argument = this.argument as MatchFilter;
-    return watchMatchGroups(ref, argument);
+  AsyncValue<List<MatchGroup>> create(Ref ref) {
+    final argument = this.argument as (MatchFilter, MatchDay);
+    return watchMatchGroups(ref, argument.$1, argument.$2);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(AsyncValue<List<MatchGroup>> value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<AsyncValue<List<MatchGroup>>>(value),
+    );
   }
 
   @override
@@ -101,12 +163,17 @@ final class WatchMatchGroupsProvider
   }
 }
 
-String _$watchMatchGroupsHash() => r'344ce02864fbf04d5f6cfb4ffc759203d26bd576';
+String _$watchMatchGroupsHash() => r'd6d6f8566ab240912a2e60fa6cc81ec3b87c4414';
 
-/// Matchs filtrés et regroupés par compétition (Matchs + En direct).
+/// Matchs filtrés et regroupés par compétition, dérivés de [watchMatches]
+/// (pas de fetch supplémentaire). Utilisé par Matchs + En direct + les compteurs.
 
 final class WatchMatchGroupsFamily extends $Family
-    with $FunctionalFamilyOverride<Stream<List<MatchGroup>>, MatchFilter> {
+    with
+        $FunctionalFamilyOverride<
+          AsyncValue<List<MatchGroup>>,
+          (MatchFilter, MatchDay)
+        > {
   WatchMatchGroupsFamily._()
     : super(
         retry: null,
@@ -116,86 +183,14 @@ final class WatchMatchGroupsFamily extends $Family
         isAutoDispose: true,
       );
 
-  /// Matchs filtrés et regroupés par compétition (Matchs + En direct).
+  /// Matchs filtrés et regroupés par compétition, dérivés de [watchMatches]
+  /// (pas de fetch supplémentaire). Utilisé par Matchs + En direct + les compteurs.
 
-  WatchMatchGroupsProvider call(MatchFilter filter) => WatchMatchGroupsProvider._(argument: filter, from: this);
+  WatchMatchGroupsProvider call(MatchFilter filter, MatchDay day) =>
+      WatchMatchGroupsProvider._(argument: (filter, day), from: this);
 
   @override
   String toString() => r'watchMatchGroupsProvider';
-}
-
-/// Flux d'un match précis (page détail).
-
-@ProviderFor(watchMatch)
-final watchMatchProvider = WatchMatchFamily._();
-
-/// Flux d'un match précis (page détail).
-
-final class WatchMatchProvider extends $FunctionalProvider<AsyncValue<Match?>, Match?, Stream<Match?>>
-    with $FutureModifier<Match?>, $StreamProvider<Match?> {
-  /// Flux d'un match précis (page détail).
-  WatchMatchProvider._({
-    required WatchMatchFamily super.from,
-    required String super.argument,
-  }) : super(
-         retry: null,
-         name: r'watchMatchProvider',
-         isAutoDispose: true,
-         dependencies: null,
-         $allTransitiveDependencies: null,
-       );
-
-  @override
-  String debugGetCreateSourceHash() => _$watchMatchHash();
-
-  @override
-  String toString() {
-    return r'watchMatchProvider'
-        ''
-        '($argument)';
-  }
-
-  @$internal
-  @override
-  $StreamProviderElement<Match?> $createElement($ProviderPointer pointer) => $StreamProviderElement(pointer);
-
-  @override
-  Stream<Match?> create(Ref ref) {
-    final argument = this.argument as String;
-    return watchMatch(ref, argument);
-  }
-
-  @override
-  bool operator ==(Object other) {
-    return other is WatchMatchProvider && other.argument == argument;
-  }
-
-  @override
-  int get hashCode {
-    return argument.hashCode;
-  }
-}
-
-String _$watchMatchHash() => r'9d679cbfd9635148ca285c4b679337f4b0d38482';
-
-/// Flux d'un match précis (page détail).
-
-final class WatchMatchFamily extends $Family with $FunctionalFamilyOverride<Stream<Match?>, String> {
-  WatchMatchFamily._()
-    : super(
-        retry: null,
-        name: r'watchMatchProvider',
-        dependencies: null,
-        $allTransitiveDependencies: null,
-        isAutoDispose: true,
-      );
-
-  /// Flux d'un match précis (page détail).
-
-  WatchMatchProvider call(String id) => WatchMatchProvider._(argument: id, from: this);
-
-  @override
-  String toString() => r'watchMatchProvider';
 }
 
 /// Ids des matchs favoris — partagé par toutes les features.
@@ -206,7 +201,12 @@ final favoriteMatchIdsProvider = FavoriteMatchIdsProvider._();
 /// Ids des matchs favoris — partagé par toutes les features.
 
 final class FavoriteMatchIdsProvider
-    extends $FunctionalProvider<AsyncValue<Set<String>>, Set<String>, Stream<Set<String>>>
+    extends
+        $FunctionalProvider<
+          AsyncValue<Set<String>>,
+          Set<String>,
+          Stream<Set<String>>
+        >
     with $FutureModifier<Set<String>>, $StreamProvider<Set<String>> {
   /// Ids des matchs favoris — partagé par toutes les features.
   FavoriteMatchIdsProvider._()

@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:scores_domain/scores_domain.dart';
-import 'package:scores_widgets/src/providers_di.dart';
 import 'package:scores_widgets/src/theme/scores_theme.dart';
 import 'package:scores_widgets/src/widgets/live_dot.dart';
 import 'package:scores_widgets/src/widgets/team_badge.dart';
 import 'package:tactics_theme/tactics_theme.dart';
 
 /// Rangée de match partagée par Matchs / En direct / Favoris.
-/// Tap → détail (port routing) ; étoile → favori (common domain).
+/// Étoile → favori (common domain).
+///
+/// WORKSHOP : la rangée n'est pas cliquable. À reconstruire en live — ajouter un
+/// port `ScoresRouting` et envelopper d'un `GestureDetector` qui ouvre le détail.
 class MatchRow extends ConsumerWidget {
   const MatchRow({required this.match, required this.showDivider, super.key});
 
@@ -20,45 +22,41 @@ class MatchRow extends ConsumerWidget {
     final theme = context.scoresTheme;
     final isFavorite = ref.watch(favoriteMatchIdsProvider.select((v) => v.value?.contains(match.id) ?? false));
 
-    return GestureDetector(
-      onTap: () => ref.read(scoresRoutingProvider).onMatchSelected(context, match.id),
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-        decoration: BoxDecoration(
-          border: showDivider ? Border(bottom: BorderSide(color: theme.divider)) : null,
-        ),
-        child: Row(
-          children: [
-            SizedBox(width: 46, child: _StatusCell(match: match)),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _TeamLine(team: match.home),
-                    const SizedBox(height: 6),
-                    _TeamLine(team: match.away),
-                  ],
-                ),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+      decoration: BoxDecoration(
+        border: showDivider ? Border(bottom: BorderSide(color: theme.divider)) : null,
+      ),
+      child: Row(
+        children: [
+          SizedBox(width: 46, child: _StatusCell(match: match)),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _TeamLine(team: match.home),
+                  const SizedBox(height: 6),
+                  _TeamLine(team: match.away),
+                ],
               ),
             ),
-            SizedBox(width: 24, child: _ScoreCell(match: match)),
-            const SizedBox(width: 6),
-            GestureDetector(
-              onTap: () => ref.read(favoritesRepositoryProvider).toggleMatch(match.id),
-              behavior: HitTestBehavior.opaque,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 6),
-                child: TacticsIcon(
-                  isFavorite ? theme.palette.iconStarFull : theme.palette.iconStarEmpty,
-                  size: 19,
-                ),
+          ),
+          SizedBox(width: 24, child: _ScoreCell(match: match)),
+          const SizedBox(width: 6),
+          GestureDetector(
+            onTap: () => ref.read(favoritesRepositoryProvider).toggleMatch(match.id),
+            behavior: HitTestBehavior.opaque,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              child: TacticsIcon(
+                isFavorite ? theme.palette.iconStarFull : theme.palette.iconStarEmpty,
+                size: 19,
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
