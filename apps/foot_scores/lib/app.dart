@@ -1,10 +1,10 @@
 import 'package:composition_root/composition_root.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:scores_widgets/scores_widgets.dart';
+import 'package:matchs_presentation/matchs_presentation.dart';
 
-/// Racine de l'app : attache le `ScoresTheme` (fourni par le theme_manager) à
-/// `ThemeData` et affiche le shell à onglets.
+/// Racine de l'app : attache le `ScoresTheme` (auto-fourni par la feature
+/// Matchs) à `ThemeData` et affiche le shell à onglets.
 class FootScoresApp extends ConsumerWidget {
   const FootScoresApp({super.key});
 

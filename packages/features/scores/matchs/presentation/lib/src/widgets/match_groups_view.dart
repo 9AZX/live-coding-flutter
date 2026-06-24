@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:matchs_presentation/src/theme/scores_theme.dart';
+import 'package:matchs_presentation/src/widgets/competition_header.dart';
+import 'package:matchs_presentation/src/widgets/match_row.dart';
 import 'package:scores_domain/scores_domain.dart';
-import 'package:scores_widgets/src/theme/scores_theme.dart';
-import 'package:scores_widgets/src/widgets/competition_header.dart';
-import 'package:scores_widgets/src/widgets/match_row.dart';
 
 /// Feed scrollable des matchs groupés par compétition (Matchs + En direct).
 /// `leading` permet d'insérer les chips de filtre en tête (page Matchs).

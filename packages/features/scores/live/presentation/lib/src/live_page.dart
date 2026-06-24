@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:live_presentation/src/providers_di.dart';
 import 'package:scores_domain/scores_domain.dart';
-import 'package:scores_widgets/scores_widgets.dart';
 
-/// Onglet En direct : réutilise le même feed que Matchs, filtré sur les live.
+/// Onglet En direct : compose des widgets injectés (header, feed, état vide)
+/// fournis par la feature Matchs — aucun import direct entre features.
 class LivePage extends ConsumerWidget {
   const LivePage({super.key});
 
@@ -13,18 +14,18 @@ class LivePage extends ConsumerWidget {
 
     return Column(
       children: [
-        const ScoresHeader(title: 'En direct'),
+        ref.watch(liveHeaderFactoryProvider).create('En direct'),
         Expanded(
           child: groups.when(
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (error, _) => Center(child: Text('$error')),
             data: (groups) => groups.isEmpty
-                ? const EmptyState(
+                ? ref.watch(liveEmptyStateFactoryProvider).create((
                     icon: Icons.sports_soccer,
                     title: 'Aucun match en direct',
                     subtitle: "Revenez au coup d'envoi des prochaines rencontres.",
-                  )
-                : MatchGroupsView(groups: groups),
+                  ))
+                : ref.watch(liveFeedFactoryProvider).create(groups),
           ),
         ),
       ],

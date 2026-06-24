@@ -1,4 +1,4 @@
-import 'package:scores_data/src/api/the_sports_db_config.dart';
+import 'package:matchs_data/src/api/the_sports_db_config.dart';
 import 'package:scores_domain/scores_domain.dart';
 
 /// Traduit le JSON TheSportsDB en entités du domaine. Tolérant : les champs

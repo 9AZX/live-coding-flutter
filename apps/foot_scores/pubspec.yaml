@@ -35,7 +35,7 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_riverpod: ^3.2.1
-  scores_widgets:
+  matchs_presentation:
 
 dev_dependencies:
   flutter_lints: ^6.0.0

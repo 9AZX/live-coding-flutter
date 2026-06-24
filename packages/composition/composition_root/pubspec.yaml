@@ -1,5 +1,5 @@
 name: composition_root
-description: Composition — agrège overrides + shell pour l'app.
+description: Composition — agrège overrides (data, onglets, widget factories) + shell.
 publish_to: "none"
 version: 0.1.0+1
 
@@ -9,9 +9,10 @@ environment:
 resolution: workspace
 
 dependencies:
+  favorites_data:
   favorites_presentation:
   live_presentation:
+  matchs_data:
   matchs_presentation:
   riverpod_annotation: ^4.0.2
-  scores_data:
   scores_shell:

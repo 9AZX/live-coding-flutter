@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:scores_widgets/src/theme/scores_theme.dart';
+import 'package:matchs_presentation/src/theme/scores_theme.dart';
 
 /// État vide centré : icône estompée + titre + sous-titre.
 class EmptyState extends StatelessWidget {

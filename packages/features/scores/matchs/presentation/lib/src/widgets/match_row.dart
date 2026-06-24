@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:matchs_presentation/src/theme/scores_theme.dart';
+import 'package:matchs_presentation/src/widgets/live_dot.dart';
+import 'package:matchs_presentation/src/widgets/team_badge.dart';
 import 'package:scores_domain/scores_domain.dart';
-import 'package:scores_widgets/src/theme/scores_theme.dart';
-import 'package:scores_widgets/src/widgets/live_dot.dart';
-import 'package:scores_widgets/src/widgets/team_badge.dart';
 import 'package:tactics_theme/tactics_theme.dart';
 
 /// Rangée de match partagée par Matchs / En direct / Favoris.

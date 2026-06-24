@@ -1,5 +1,5 @@
-name: scores_data
-description: Couche data partagée (sources de données en mémoire, binding DI).
+name: matchs_data
+description: Couche data de la feature Matchs (impl TheSportsDB de ScoresRepository).
 publish_to: "none"
 version: 0.1.0+1
 

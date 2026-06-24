@@ -1,7 +1,7 @@
 import 'dart:developer' as developer;
 
 import 'package:dio/dio.dart';
-import 'package:scores_data/src/api/the_sports_db_config.dart';
+import 'package:matchs_data/src/api/the_sports_db_config.dart';
 
 /// Accès bas niveau à TheSportsDB : renvoie la liste sous la clé demandée
 /// (`events`, `timeline`, `lineup`), sans interprétation.

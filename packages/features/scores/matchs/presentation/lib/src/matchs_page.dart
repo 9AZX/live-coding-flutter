@@ -3,8 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:matchs_presentation/src/filter_chips.dart';
 import 'package:matchs_presentation/src/scores_filter_notifier.dart';
 import 'package:matchs_presentation/src/selected_day_notifier.dart';
+import 'package:matchs_presentation/src/theme/scores_theme.dart';
+import 'package:matchs_presentation/src/widgets/empty_state.dart';
+import 'package:matchs_presentation/src/widgets/match_groups_view.dart';
+import 'package:matchs_presentation/src/widgets/scores_header.dart';
 import 'package:scores_domain/scores_domain.dart';
-import 'package:scores_widgets/scores_widgets.dart';
 
 /// Onglet Matchs : feed des scores foot groupé par compétition.
 class MatchsPage extends ConsumerWidget {

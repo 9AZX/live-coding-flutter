@@ -14,7 +14,8 @@ part of 'scores_filter_notifier.dart';
 final scoresFilterProvider = ScoresFilterProvider._();
 
 /// Filtre sélectionné via les chips de la page Matchs.
-final class ScoresFilterProvider extends $NotifierProvider<ScoresFilter, MatchFilter> {
+final class ScoresFilterProvider
+    extends $NotifierProvider<ScoresFilter, MatchFilter> {
   /// Filtre sélectionné via les chips de la page Matchs.
   ScoresFilterProvider._()
     : super(
@@ -54,7 +55,13 @@ abstract class _$ScoresFilter extends $Notifier<MatchFilter> {
   WhenComplete runBuild() {
     final ref = this.ref as $Ref<MatchFilter, MatchFilter>;
     final element =
-        ref.element as $ClassProviderElement<AnyNotifier<MatchFilter, MatchFilter>, MatchFilter, Object?, Object?>;
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<MatchFilter, MatchFilter>,
+              MatchFilter,
+              Object?,
+              Object?
+            >;
     return element.handleCreate(ref, build);
   }
 }

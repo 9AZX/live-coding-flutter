@@ -17,7 +17,8 @@ final scoresThemeProvider = ScoresThemeProvider._();
 /// Le thème est fourni par la feature elle-même, construit depuis la palette DSM.
 /// L'app peut l'overrider (ex. dark mode, A/B) sans theme_manager dédié.
 
-final class ScoresThemeProvider extends $FunctionalProvider<ScoresTheme, ScoresTheme, ScoresTheme>
+final class ScoresThemeProvider
+    extends $FunctionalProvider<ScoresTheme, ScoresTheme, ScoresTheme>
     with $Provider<ScoresTheme> {
   /// Le thème est fourni par la feature elle-même, construit depuis la palette DSM.
   /// L'app peut l'overrider (ex. dark mode, A/B) sans theme_manager dédié.
@@ -37,7 +38,8 @@ final class ScoresThemeProvider extends $FunctionalProvider<ScoresTheme, ScoresT
 
   @$internal
   @override
-  $ProviderElement<ScoresTheme> $createElement($ProviderPointer pointer) => $ProviderElement(pointer);
+  $ProviderElement<ScoresTheme> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
 
   @override
   ScoresTheme create(Ref ref) {

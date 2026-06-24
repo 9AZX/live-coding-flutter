@@ -14,7 +14,8 @@ part of 'selected_day_notifier.dart';
 final selectedDayProvider = SelectedDayProvider._();
 
 /// Jour sélectionné via les onglets Hier / Aujourd'hui / Demain.
-final class SelectedDayProvider extends $NotifierProvider<SelectedDay, MatchDay> {
+final class SelectedDayProvider
+    extends $NotifierProvider<SelectedDay, MatchDay> {
   /// Jour sélectionné via les onglets Hier / Aujourd'hui / Demain.
   SelectedDayProvider._()
     : super(
@@ -53,7 +54,14 @@ abstract class _$SelectedDay extends $Notifier<MatchDay> {
   @override
   WhenComplete runBuild() {
     final ref = this.ref as $Ref<MatchDay, MatchDay>;
-    final element = ref.element as $ClassProviderElement<AnyNotifier<MatchDay, MatchDay>, MatchDay, Object?, Object?>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<MatchDay, MatchDay>,
+              MatchDay,
+              Object?,
+              Object?
+            >;
     return element.handleCreate(ref, build);
   }
 }

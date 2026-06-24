@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:scores_widgets/src/theme/scores_theme.dart';
+import 'package:matchs_presentation/src/theme/scores_theme.dart';
 
 /// Bandeau rouge commun aux écrans : titre deux tons, avec un `bottom`
 /// optionnel (onglets de jour pour Matchs).

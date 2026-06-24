@@ -1,8 +1,8 @@
 import 'dart:developer' as developer;
 
-import 'package:scores_data/src/api/the_sports_db_client.dart';
-import 'package:scores_data/src/api/the_sports_db_config.dart';
-import 'package:scores_data/src/api/the_sports_db_mapper.dart';
+import 'package:matchs_data/src/api/the_sports_db_client.dart';
+import 'package:matchs_data/src/api/the_sports_db_config.dart';
+import 'package:matchs_data/src/api/the_sports_db_mapper.dart';
 import 'package:scores_domain/scores_domain.dart';
 
 /// Source de données réelle TheSportsDB. Implémente la même interface que les

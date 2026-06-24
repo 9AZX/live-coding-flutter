@@ -1,6 +1,6 @@
 import 'package:flutter/painting.dart';
+import 'package:matchs_presentation/src/theme/scores_theme.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:scores_widgets/src/theme/scores_theme.dart';
 import 'package:tactics_theme/tactics_theme.dart';
 
 part 'providers_internal.g.dart';

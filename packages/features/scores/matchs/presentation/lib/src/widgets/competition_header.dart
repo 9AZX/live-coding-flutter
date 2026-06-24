@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:matchs_presentation/src/theme/scores_theme.dart';
 import 'package:scores_domain/scores_domain.dart';
-import 'package:scores_widgets/src/theme/scores_theme.dart';
 
 /// Titre d'un groupe de matchs : pastille de la compétition + nom + pays.
 class CompetitionHeader extends StatelessWidget {

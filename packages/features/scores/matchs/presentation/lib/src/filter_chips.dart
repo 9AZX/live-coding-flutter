@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:matchs_presentation/src/scores_filter_notifier.dart';
 import 'package:matchs_presentation/src/selected_day_notifier.dart';
+import 'package:matchs_presentation/src/theme/scores_theme.dart';
 import 'package:scores_domain/scores_domain.dart';
-import 'package:scores_widgets/scores_widgets.dart';
 
 const _labels = {
   MatchFilter.all: 'Tous',
