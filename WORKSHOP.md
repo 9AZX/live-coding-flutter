@@ -209,13 +209,32 @@ cd packages/features/scores/matchs/presentation && dart run build_runner build -
 
 ## Étape 4 — Créer la feature 🏗️  (Mason)
 
+Mason scaffolde un package prêt à l'emploi (pubspec + barrel + page).
+
 ```bash
-mason make presentation
-# → packages/features/scores/match_detail/presentation
+# 1) récupérer les bricks déclarées dans mason.yaml (une seule fois)
+mason get
+
+# 2) générer la feature directement au bon endroit
+mason make presentation \
+  -o packages/features/scores/match_detail/presentation \
+  --name match_detail_presentation \
+  --classname match_detail
 ```
-Renomme/ajuste le `pubspec.yaml` : `name: match_detail_presentation`,
-`resolution: workspace`, et les dépendances (`flutter`, `flutter_riverpod`,
-`scores_domain`, `tactics_theme`).
+
+> Sans les flags `--name/--classname`, Mason te **pose les questions**
+> (« Nom du package ? » → `match_detail_presentation`, « Nom de la feature ? »
+> → `match_detail`).
+
+Ça crée `pubspec.yaml` (déjà bon : `resolution: workspace`, deps
+`flutter`/`flutter_riverpod`/`scores_domain`/`tactics_theme`), le barrel
+`match_detail_presentation.dart` et un `MatchDetailPage` placeholder.
+
+**✅ Vérifie**
+```bash
+flutter pub get
+flutter analyze packages/features/scores/match_detail/presentation
+```
 
 ---
 

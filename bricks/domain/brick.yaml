@@ -1,20 +1,18 @@
 name: domain
-description: A brick to create Clean Architecture Folders with Betclic conventions for all packages.
-version: 0.0.1+1
+description: Scaffold une couche domain (feature) conforme à ce repo.
+version: 0.1.0+0
 
-# The following defines the environment for the current brick.
-# It includes the version of mason that the brick requires.
 environment:
-  mason: ^0.1.0
+  mason: ">=0.1.0 <0.2.0"
 
 vars:
   name:
     type: string
-    description: The name of the package.
-    default: your_package_name_snake_case
-    prompt: Please enter the package name.
+    description: Nom du package (snake_case), ex. match_detail_domain.
+    default: my_feature_domain
+    prompt: Nom du package ?
   classname:
     type: string
-    description: The name of the class.
-    default: your_package_name_snake_case
-    prompt: Please enter the package name.
+    description: Nom de la feature (snake_case), ex. match_detail.
+    default: my_feature
+    prompt: Nom de la feature ?

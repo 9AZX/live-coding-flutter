@@ -1,0 +1,14 @@
+name: {{name.snakeCase()}}
+description: Feature {{classname.pascalCase()}} (couche data).
+publish_to: "none"
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.10.0-0 <4.0.0"
+
+resolution: workspace
+
+dependencies:
+  riverpod: ^3.2.1
+  riverpod_annotation: ^4.0.2
+  scores_domain:
