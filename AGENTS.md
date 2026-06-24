@@ -26,14 +26,21 @@ Monorepo Flutter organisé en **Dart workspace + Melos**, architecture
 ```
 apps/                    # Points d'entrée des apps (ex: foot_scores)
 packages/
-├── composition/         # DI et providers de composition (router racine, theme_manager…)
-├── domain/              # Domaine partagé entre features
-├── dsm/                 # Design System Manager (thèmes, composants)
-├── features/            # Packages de features indépendants
-├── utilities/           # Utilitaires réutilisables, agnostiques du produit
-└── other/               # Custom lints, générateurs
+├── composition/         # Assemblage (shell, composition_root) : overrides + injection
+├── shared_domain/       # Domaine partagé entre features (ex: shared_domain/scores/domain)
+├── dsm/                 # Design System (palette, tokens, icônes — tactics_theme)
+├── features/            # Features colocalisées : features/<universe>/<feature>/{data,domain,presentation}
+└── utilities/           # Utilitaires agnostiques du produit (ex: widget_factory)
 bricks/                  # Templates Mason (data / domain / presentation)
 ```
+
+**Conventions clés (revue archi)** :
+- Une feature colocalise ses couches `data/domain/presentation` sous `features/<universe>/<feature>/`.
+- Le domaine partagé entre features va dans `shared_domain/`.
+- Le **thème est porté par la feature** : `ThemeExtension` dans `presentation/lib/src/theme/`,
+  construit dans `providers_internal` depuis la palette DSM. Pas de `theme_manager`.
+- Pour exposer un widget à une autre feature/host : `WidgetFactory<T>` (utilitaire `widget_factory`)
+  déclarée en stub côté host (`providers_di`) et overridée en composition — jamais d'import feature→feature.
 
 ---
 

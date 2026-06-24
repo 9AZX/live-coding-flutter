@@ -1,0 +1,13 @@
+name: widget_factory_presentation
+description: Utilitaire — fabrique de widget injectable entre features.
+publish_to: "none"
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.10.0-0 <4.0.0"
+
+resolution: workspace
+
+dependencies:
+  flutter:
+    sdk: flutter

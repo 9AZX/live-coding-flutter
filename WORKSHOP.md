@@ -16,7 +16,7 @@ Objectif du live-coding : reconstruire cette tranche verticale **de bout en bout
 
 | Couche | Élément supprimé |
 |--------|------------------|
-| Feature | package `packages/features/match_detail/presentation` (page + widgets) |
+| Feature | package `packages/features/scores/match_detail/presentation` (page + widgets) |
 | Domain | `ScoresRepository.watchMatch(id)` + provider `watchMatch` |
 | Data | `TheSportsDb…watchMatch` / fetch détail · client `lookupevent/timeline/lineup` · mapper `toEvents`/`toLineups` |
 | DSM | port `ScoresRouting` + `scoresRoutingProvider` · `onTap` de `MatchRow` |
@@ -32,7 +32,7 @@ Entités déjà en place (rien à refaire) : `Match.events`, `Match.lineups`,
 ### 1. Mason — scaffolder la feature
 
 ```bash
-mason make presentation        # → packages/features/match_detail/presentation
+mason make presentation        # → packages/features/scores/match_detail/presentation
 ```
 
 Adapter le `pubspec.yaml` (deps : `flutter_riverpod`, `scores_domain`,

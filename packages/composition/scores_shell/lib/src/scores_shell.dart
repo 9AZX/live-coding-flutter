@@ -1,9 +1,7 @@
-import 'package:favorites_presentation/favorites_presentation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:live_presentation/live_presentation.dart';
-import 'package:matchs_presentation/matchs_presentation.dart';
+import 'package:scores_shell/src/providers_di.dart';
 import 'package:scores_shell/src/selected_tab_notifier.dart';
 import 'package:scores_widgets/scores_widgets.dart';
 import 'package:tactics_theme/tactics_theme.dart';
@@ -27,7 +25,11 @@ class ScoresShell extends ConsumerWidget {
             Expanded(
               child: IndexedStack(
                 index: tab.index,
-                children: const [MatchsPage(), LivePage(), FavoritesPage()],
+                children: [
+                  ref.watch(matchsTabProvider).create(null),
+                  ref.watch(directTabProvider).create(null),
+                  ref.watch(favoritesTabProvider).create(null),
+                ],
               ),
             ),
             const _BottomNav(),
