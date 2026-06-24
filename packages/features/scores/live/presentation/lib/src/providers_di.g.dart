@@ -18,12 +18,7 @@ final liveHeaderFactoryProvider = LiveHeaderFactoryProvider._();
 /// ne dépend ainsi d'aucune autre feature.
 
 final class LiveHeaderFactoryProvider
-    extends
-        $FunctionalProvider<
-          WidgetFactory<String>,
-          WidgetFactory<String>,
-          WidgetFactory<String>
-        >
+    extends $FunctionalProvider<WidgetFactory<String>, WidgetFactory<String>, WidgetFactory<String>>
     with $Provider<WidgetFactory<String>> {
   /// Widgets injectés par la composition (fournis par la feature Matchs) — Live
   /// ne dépend ainsi d'aucune autre feature.
@@ -122,10 +117,7 @@ final class LiveEmptyStateFactoryProvider
           WidgetFactory<({IconData icon, String subtitle, String title})>,
           WidgetFactory<({IconData icon, String subtitle, String title})>
         >
-    with
-        $Provider<
-          WidgetFactory<({IconData icon, String subtitle, String title})>
-        > {
+    with $Provider<WidgetFactory<({IconData icon, String subtitle, String title})>> {
   LiveEmptyStateFactoryProvider._()
     : super(
         from: null,
@@ -142,10 +134,9 @@ final class LiveEmptyStateFactoryProvider
 
   @$internal
   @override
-  $ProviderElement<
-    WidgetFactory<({IconData icon, String subtitle, String title})>
-  >
-  $createElement($ProviderPointer pointer) => $ProviderElement(pointer);
+  $ProviderElement<WidgetFactory<({IconData icon, String subtitle, String title})>> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
 
   @override
   WidgetFactory<({IconData icon, String subtitle, String title})> create(
@@ -160,13 +151,9 @@ final class LiveEmptyStateFactoryProvider
   ) {
     return $ProviderOverride(
       origin: this,
-      providerOverride:
-          $SyncValueProvider<
-            WidgetFactory<({IconData icon, String subtitle, String title})>
-          >(value),
+      providerOverride: $SyncValueProvider<WidgetFactory<({IconData icon, String subtitle, String title})>>(value),
     );
   }
 }
 
-String _$liveEmptyStateFactoryHash() =>
-    r'4d6eb8c818666dbfa774f330cf69d00a04d3e10b';
+String _$liveEmptyStateFactoryHash() => r'4d6eb8c818666dbfa774f330cf69d00a04d3e10b';

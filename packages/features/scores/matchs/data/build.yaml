@@ -1,0 +1,7 @@
+targets:
+  $default:
+    builders:
+      # DTOs : freezed + json_serializable sur les fichiers *.br.dart
+      json_serializable:
+        generate_for:
+          - "**/*.br.dart"

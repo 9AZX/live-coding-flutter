@@ -3,6 +3,7 @@ import 'dart:developer' as developer;
 import 'package:matchs_data/src/api/the_sports_db_client.dart';
 import 'package:matchs_data/src/api/the_sports_db_config.dart';
 import 'package:matchs_data/src/api/the_sports_db_mapper.dart';
+import 'package:matchs_data/src/dtos/event_dto.br.dart';
 import 'package:scores_domain/scores_domain.dart';
 
 /// Source de données réelle TheSportsDB. Implémente la même interface que les
@@ -26,10 +27,10 @@ class TheSportsDbScoresDataSource implements ScoresRepository {
     final matches = <Match>[];
 
     for (final leagueId in TheSportsDbConfig.leagueIds) {
-      final raws = await _client.eventsDay(date, leagueId)
-        ..sort((a, b) => '${a['strTimestamp']}'.compareTo('${b['strTimestamp']}'));
+      final events = (await _client.eventsDay(date, leagueId)).map(EventDto.fromJson).toList()
+        ..sort((a, b) => '${a.timestamp}'.compareTo('${b.timestamp}'));
 
-      matches.addAll(raws.map(_mapper.toMatch));
+      matches.addAll(events.map(_mapper.toMatch));
     }
 
     developer.log(

@@ -6,18 +6,17 @@ import 'package:matchs_data/src/api/the_sports_db_config.dart';
 /// Accès bas niveau à TheSportsDB : renvoie la liste sous la clé demandée
 /// (`events`, `timeline`, `lineup`), sans interprétation.
 class TheSportsDbClient {
-  TheSportsDbClient({Dio? dio})
-    : _dio =
-          dio ??
-          Dio(
-            BaseOptions(
-              baseUrl: '${TheSportsDbConfig.baseUrl}/${TheSportsDbConfig.apiKey}',
-              connectTimeout: const Duration(seconds: 15),
-              receiveTimeout: const Duration(seconds: 15),
-            ),
-          );
+  TheSportsDbClient({Dio? dio}) : _dio = dio ?? _defaultDio();
 
   final Dio _dio;
+
+  static Dio _defaultDio() => Dio(
+    BaseOptions(
+      baseUrl: '${TheSportsDbConfig.baseUrl}/${TheSportsDbConfig.apiKey}',
+      connectTimeout: const Duration(seconds: 15),
+      receiveTimeout: const Duration(seconds: 15),
+    ),
+  );
 
   /// Tous les matchs d'une ligue à une date donnée (`date` = `YYYY-MM-DD`).
   Future<List<Map<String, dynamic>>> eventsDay(String date, int leagueId) =>

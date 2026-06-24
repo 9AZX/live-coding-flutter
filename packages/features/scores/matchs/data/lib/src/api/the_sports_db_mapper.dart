@@ -1,4 +1,5 @@
 import 'package:matchs_data/src/api/the_sports_db_config.dart';
+import 'package:matchs_data/src/dtos/event_dto.br.dart';
 import 'package:scores_domain/scores_domain.dart';
 
 /// Traduit le JSON TheSportsDB en entités du domaine. Tolérant : les champs
@@ -20,27 +21,27 @@ class TheSportsDbMapper {
   ];
 
   Match toMatch(
-    Map<String, dynamic> e, {
+    EventDto e, {
     List<MatchEvent> events = const [],
     List<Lineup> lineups = const [],
   }) {
-    final leagueId = _int(e['idLeague']);
+    final leagueId = _int(e.leagueId);
 
     return Match(
-      id: '${e['idEvent']}',
+      id: _str(e.id),
       competition: Competition(
         id: '$leagueId',
-        name: _str(e['strLeague']),
+        name: _str(e.league),
         country: TheSportsDbConfig.countryByLeague[leagueId] ?? '',
         colorValue: _colorFor(leagueId),
       ),
-      home: _team(e['idHomeTeam'], e['strHomeTeam']),
-      away: _team(e['idAwayTeam'], e['strAwayTeam']),
-      homeScore: _int(e['intHomeScore']),
-      awayScore: _int(e['intAwayScore']),
-      status: _status(_str(e['strStatus']), _str(e['strProgress'])),
-      kickoff: _time(e['strTimestamp'], e['strTime']),
-      minute: int.tryParse(_str(e['strProgress'])),
+      home: _team(e.homeTeamId, e.homeTeam),
+      away: _team(e.awayTeamId, e.awayTeam),
+      homeScore: _int(e.homeScore),
+      awayScore: _int(e.awayScore),
+      status: _status(_str(e.status), _str(e.progress)),
+      kickoff: _time(e.timestamp, e.time),
+      minute: int.tryParse(_str(e.progress)),
       events: events,
       lineups: lineups,
     );

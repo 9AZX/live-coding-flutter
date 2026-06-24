@@ -16,12 +16,7 @@ final favoritesHeaderFactoryProvider = FavoritesHeaderFactoryProvider._();
 /// Widgets injectés par la composition (fournis par la feature Matchs).
 
 final class FavoritesHeaderFactoryProvider
-    extends
-        $FunctionalProvider<
-          WidgetFactory<String>,
-          WidgetFactory<String>,
-          WidgetFactory<String>
-        >
+    extends $FunctionalProvider<WidgetFactory<String>, WidgetFactory<String>, WidgetFactory<String>>
     with $Provider<WidgetFactory<String>> {
   /// Widgets injectés par la composition (fournis par la feature Matchs).
   FavoritesHeaderFactoryProvider._()
@@ -58,19 +53,13 @@ final class FavoritesHeaderFactoryProvider
   }
 }
 
-String _$favoritesHeaderFactoryHash() =>
-    r'073a1ffd044d776137f14cf96a1113677b20cc16';
+String _$favoritesHeaderFactoryHash() => r'073a1ffd044d776137f14cf96a1113677b20cc16';
 
 @ProviderFor(favoritesListFactory)
 final favoritesListFactoryProvider = FavoritesListFactoryProvider._();
 
 final class FavoritesListFactoryProvider
-    extends
-        $FunctionalProvider<
-          WidgetFactory<List<Match>>,
-          WidgetFactory<List<Match>>,
-          WidgetFactory<List<Match>>
-        >
+    extends $FunctionalProvider<WidgetFactory<List<Match>>, WidgetFactory<List<Match>>, WidgetFactory<List<Match>>>
     with $Provider<WidgetFactory<List<Match>>> {
   FavoritesListFactoryProvider._()
     : super(
@@ -106,12 +95,10 @@ final class FavoritesListFactoryProvider
   }
 }
 
-String _$favoritesListFactoryHash() =>
-    r'3d1ec91e7c624052bdcb84d29b5d7451f5e3720a';
+String _$favoritesListFactoryHash() => r'3d1ec91e7c624052bdcb84d29b5d7451f5e3720a';
 
 @ProviderFor(favoritesEmptyStateFactory)
-final favoritesEmptyStateFactoryProvider =
-    FavoritesEmptyStateFactoryProvider._();
+final favoritesEmptyStateFactoryProvider = FavoritesEmptyStateFactoryProvider._();
 
 final class FavoritesEmptyStateFactoryProvider
     extends
@@ -120,10 +107,7 @@ final class FavoritesEmptyStateFactoryProvider
           WidgetFactory<({IconData icon, String subtitle, String title})>,
           WidgetFactory<({IconData icon, String subtitle, String title})>
         >
-    with
-        $Provider<
-          WidgetFactory<({IconData icon, String subtitle, String title})>
-        > {
+    with $Provider<WidgetFactory<({IconData icon, String subtitle, String title})>> {
   FavoritesEmptyStateFactoryProvider._()
     : super(
         from: null,
@@ -140,10 +124,9 @@ final class FavoritesEmptyStateFactoryProvider
 
   @$internal
   @override
-  $ProviderElement<
-    WidgetFactory<({IconData icon, String subtitle, String title})>
-  >
-  $createElement($ProviderPointer pointer) => $ProviderElement(pointer);
+  $ProviderElement<WidgetFactory<({IconData icon, String subtitle, String title})>> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
 
   @override
   WidgetFactory<({IconData icon, String subtitle, String title})> create(
@@ -158,13 +141,9 @@ final class FavoritesEmptyStateFactoryProvider
   ) {
     return $ProviderOverride(
       origin: this,
-      providerOverride:
-          $SyncValueProvider<
-            WidgetFactory<({IconData icon, String subtitle, String title})>
-          >(value),
+      providerOverride: $SyncValueProvider<WidgetFactory<({IconData icon, String subtitle, String title})>>(value),
     );
   }
 }
 
-String _$favoritesEmptyStateFactoryHash() =>
-    r'5a4abc66bbd03ab78a219047aad080729e45282f';
+String _$favoritesEmptyStateFactoryHash() => r'5a4abc66bbd03ab78a219047aad080729e45282f';
