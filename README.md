@@ -1,17 +1,20 @@
 # foot_scores
 
-A new Flutter project.
+App de démonstration (scores foot, Coupe du Monde) servant de **template
+d'exercice de live coding Flutter**. Elle reproduit l'architecture et les
+conventions du monorepo de production `flutter-front` (Betclic) à petite échelle :
+Dart workspace + Melos, trios de packages `domain` / `data` / `presentation`,
+injection par `bindProviders`, Riverpod 3 codegen, AutoRoute, freezed, theme_tailor.
 
-## Getting Started
+## Démarrer
 
-This project is a starting point for a Flutter application.
+```bash
+mise run bs         # dart pub get + melos bootstrap
+mise run generate   # codegen (riverpod, freezed, auto_route, theme_tailor)
+cd apps/foot_scores && flutter run
+```
 
-A few resources to get you started if this is your first Flutter project:
+## Documentation
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- [`AGENTS.md`](AGENTS.md) — architecture, conventions, règles de couches, tests
+- [`WORKSHOP.md`](WORKSHOP.md) — l'exercice : reconstruire l'écran « Détail d'un match »

@@ -2,13 +2,14 @@ import 'dart:developer' as developer;
 
 import 'package:dio/dio.dart';
 import 'package:matchs_data/src/api/the_sports_db_config.dart';
+import 'package:matchs_data/src/package_name.dart';
 
 /// Accès bas niveau à TheSportsDB : renvoie la liste sous la clé demandée
 /// (`events`, `timeline`, `lineup`), sans interprétation.
 class TheSportsDbClient {
-  TheSportsDbClient({Dio? dio}) : _dio = dio ?? _defaultDio();
-
   final Dio _dio;
+
+  TheSportsDbClient({Dio? dio}) : _dio = dio ?? _defaultDio();
 
   static Dio _defaultDio() => Dio(
     BaseOptions(
@@ -31,17 +32,17 @@ class TheSportsDbClient {
     required String key,
   }) async {
     try {
-      final res = await _dio.get<Map<String, dynamic>>(path, queryParameters: query);
-      final data = res.data?[key];
+      final response = await _dio.get<Map<String, dynamic>>(path, queryParameters: query);
+      final data = response.data?[key];
       final list = data is List ? data.cast<Map<String, dynamic>>() : const <Map<String, dynamic>>[];
 
-      developer.log('$path $query → ${res.statusCode} $key=${list.length}', name: 'thesportsdb');
+      developer.log('$path $query → ${response.statusCode} $key=${list.length}', name: packageName);
 
       return list;
     } on DioException catch (e, s) {
       developer.log(
         'Échec $path: ${e.message} (HTTP ${e.response?.statusCode})',
-        name: 'thesportsdb',
+        name: packageName,
         error: e,
         stackTrace: s,
       );

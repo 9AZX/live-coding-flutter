@@ -1,2 +1,2 @@
-/// Filtre appliqué au feed des matchs (chips de la page Matchs).
-enum MatchFilter { all, live, upcoming, finished }
+/// Filtre appliqué au feed des matchs (chips de l'écran Matchs).
+enum MatchFilter { all, finished, live, upcoming }

@@ -1,0 +1,32 @@
+name: tactics_components
+description: Design System — tokens de marque Betclic, polices et composants atomiques.
+version: 0.0.1
+
+environment:
+  flutter: ">=3.27.0"
+  sdk: ">=3.11.0 <4.0.0"
+resolution: workspace
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  givn:
+  shouldly: ^0.5.0+1
+
+flutter:
+  assets:
+    - assets/icons/
+    - assets/nav/
+  fonts:
+    - family: Betclic
+      fonts:
+        - asset: assets/fonts/Betclic.ttf
+    # ponytail: la VF couvre les graisses ; "Betclic Expanded" retombe sur Betclic.
+    #           Ajouter les .ttf Expanded statiques du design pour la fidélité totale.
+    - family: Betclic Expanded
+      fonts:
+        - asset: assets/fonts/Betclic.ttf

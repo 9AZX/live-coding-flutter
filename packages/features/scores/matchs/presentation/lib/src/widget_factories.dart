@@ -7,37 +7,37 @@ import 'package:scores_domain/scores_domain.dart';
 import 'package:widget_factory_presentation/widget_factory_presentation.dart';
 
 /// Données d'un état vide (record structurel → pas de type partagé à importer).
-typedef EmptyStateData = ({IconData icon, String title, String subtitle});
+typedef EmptyStateData = ({IconData icon, String subtitle, String title});
 
-/// Widgets de Matchs exposés aux autres features (Live, Favoris) via injection.
-/// Les arguments sont des types de `shared_domain` ou Dart → aucun couplage
-/// feature → feature.
+/// Widgets de Matchs exposés aux autres features (En direct, Favoris) via
+/// injection. Les arguments sont des types de `scores_domain` ou de Dart, donc
+/// aucune feature n'a besoin d'importer une autre feature.
 
-class ScoresHeaderWidgetFactory implements WidgetFactory<String> {
+final class ScoresHeaderWidgetFactory implements WidgetFactory<String> {
   const ScoresHeaderWidgetFactory();
 
   @override
   Widget create(String title, {Key? key}) => ScoresHeader(title: title, key: key);
 }
 
-class MatchGroupsViewWidgetFactory implements WidgetFactory<List<MatchGroup>> {
+final class MatchGroupsViewWidgetFactory implements WidgetFactory<List<MatchGroup>> {
   const MatchGroupsViewWidgetFactory();
 
   @override
   Widget create(List<MatchGroup> groups, {Key? key}) => MatchGroupsView(groups: groups, key: key);
 }
 
-class FavoritesListWidgetFactory implements WidgetFactory<List<Match>> {
+final class FavoritesListWidgetFactory implements WidgetFactory<List<Match>> {
   const FavoritesListWidgetFactory();
 
   @override
   Widget create(List<Match> matches, {Key? key}) => FavoritesList(matches: matches, key: key);
 }
 
-class EmptyStateWidgetFactory implements WidgetFactory<EmptyStateData> {
+final class EmptyStateWidgetFactory implements WidgetFactory<EmptyStateData> {
   const EmptyStateWidgetFactory();
 
   @override
   Widget create(EmptyStateData data, {Key? key}) =>
-      EmptyState(icon: data.icon, title: data.title, subtitle: data.subtitle, key: key);
+      EmptyState(icon: data.icon, subtitle: data.subtitle, title: data.title, key: key);
 }

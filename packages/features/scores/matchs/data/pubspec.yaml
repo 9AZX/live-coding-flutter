@@ -1,22 +1,26 @@
 name: matchs_data
-description: Couche data de la feature Matchs (impl TheSportsDB de ScoresRepository).
-publish_to: "none"
-version: 0.1.0+1
+description: Couche data de la feature Matchs (implémentation TheSportsDB de ScoresRepository).
+version: 0.0.1
 
 environment:
-  sdk: ">=3.10.0-0 <4.0.0"
-
+  flutter: ">=3.27.0"
+  sdk: ">=3.11.0 <4.0.0"
 resolution: workspace
 
 dependencies:
   dio: ^5.7.0
   freezed_annotation: ^3.1.0
-  json_annotation: ^4.9.0
+  json_annotation: ^4.11.0
   riverpod: ^3.2.1
   riverpod_annotation: ^4.0.2
   scores_domain:
 
 dev_dependencies:
-  build_runner: ^2.11.1
+  build_runner: ^2.15.0
+  flutter_test:
+    sdk: flutter
   freezed: ^3.1.0
+  givn:
   json_serializable: ^6.9.4
+  riverpod_generator: ^4.0.3
+  shouldly: ^0.5.0+1

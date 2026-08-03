@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:matchs_presentation/src/theme/scores_theme.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:matchs_presentation/src/providers_di.br.dart';
 import 'package:scores_domain/scores_domain.dart';
+import 'package:tactics_components/tactics_components.dart';
 
 /// Titre d'un groupe de matchs : pastille de la compétition + nom + pays.
-class CompetitionHeader extends StatelessWidget {
-  const CompetitionHeader({required this.competition, super.key});
-
+class CompetitionHeader extends ConsumerWidget {
   final Competition competition;
 
+  const CompetitionHeader({required this.competition, super.key});
+
   @override
-  Widget build(BuildContext context) {
-    final theme = context.scoresTheme;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = ref.watch(matchsThemeProvider);
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 18, 16, 9),
+      padding: const EdgeInsets.fromLTRB(TacticsSpacing.spacing400, 18, TacticsSpacing.spacing400, 9),
       child: Row(
         children: [
           Container(
@@ -25,20 +27,9 @@ class CompetitionHeader extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 9),
-          Text(
-            competition.name,
-            style: TextStyle(
-              fontFamily: theme.palette.fontBrand,
-              fontWeight: FontWeight.w800,
-              fontSize: 14,
-              color: theme.palette.night,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            competition.country,
-            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: theme.palette.n300),
-          ),
+          Text(competition.name, style: theme.competitionNameTextStyle),
+          const SizedBox(width: TacticsSpacing.spacing200),
+          Text(competition.country, style: theme.competitionCountryTextStyle),
         ],
       ),
     );

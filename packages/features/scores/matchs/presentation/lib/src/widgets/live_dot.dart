@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 
 /// Petit point pulsant signalant un match en direct.
 class LiveDot extends StatefulWidget {
-  const LiveDot({required this.color, this.size = 6, super.key});
-
   final Color color;
   final double size;
+
+  const LiveDot({required this.color, this.size = 6, super.key});
 
   @override
   State<LiveDot> createState() => _LiveDotState();

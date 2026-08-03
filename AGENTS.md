@@ -2,8 +2,8 @@
 
 Instructions pour les agents IA travaillant sur ce repo. C'est un **template
 d'exercice de live coding Flutter** qui reproduit l'architecture et les
-conventions du repo de production `flutter-front` (Betclic). Les règles ci-dessous
-sont celles à suivre quand on vibe-code des features dans ce template.
+conventions du repo de production `flutter-front` (Betclic), à plus petite
+échelle — même modèle que [`innovaxion_2026_app`](https://github.com/betclicgroup/innovaxion_2026_app).
 
 ---
 
@@ -14,59 +14,71 @@ Monorepo Flutter organisé en **Dart workspace + Melos**, architecture
 
 ### Tech Stack
 
-- **Flutter 3.38.x** / **Dart SDK >=3.10.0 <4.0.0**
+- **Flutter 3.38+** / **Dart SDK >=3.11.0 <4.0.0**
 - **Riverpod V3** avec code generation pour le state management
-- **Clean Architecture** feature-first
-- **Melos** pour la gestion du workspace
-- **Mason / Bricks** pour scaffolder les packages (`data`, `domain`, `presentation`)
-- **auto_route** (routing), **freezed** (DTOs/entités), **theme_tailor** (thèmes)
+- **auto_route** (routing), **freezed** (entités/DTOs), **theme_tailor** (thèmes)
+- **Melos** pour le workspace, **Mason** pour scaffolder les couches
+- **givn** + **shouldly** pour les tests
 
 ### Repository Structure
 
 ```
-apps/                    # Points d'entrée des apps (ex: foot_scores)
+apps/
+  foot_scores/                    # point d'entrée : main.dart + application/
 packages/
-├── composition/         # Assemblage (shell, composition_root) : overrides + injection
-├── shared_domain/       # Domaine partagé entre features (ex: shared_domain/scores/domain)
-├── dsm/                 # Design System (palette, tokens, icônes — tactics_theme)
-├── features/            # Features colocalisées : features/<universe>/<feature>/{data,domain,presentation}
-└── utilities/           # Utilitaires agnostiques du produit (ex: widget_factory)
-bricks/                  # Templates Mason (data / domain / presentation)
+  composition/
+    app_providers/                # agrège tous les bindProviders() en une liste d'overrides
+    app_router/                   # AppRouter (racine AutoRoute), shell à onglets, impls des ports de routing
+  dsm/
+    tactics_components/           # tokens (palette, radius, spacing, icônes) + widgets DSM — pas de Riverpod
+    tactics_providers/            # contrats DI du DSM : tacticsPaletteProvider (throw) + bindProviders
+  shared_domain/
+    scores/domain/                # domaine partagé entre features (pkg scores_domain)
+  features/
+    scores/matchs/    data|presentation      # feed des scores + widgets partagés
+    scores/live/      presentation
+    scores/favorites/ data|domain|presentation
+  utilities/
+    exceptions/                   # UnregisteredProviderException
+    givn/                         # DSL de test given(...).when(...).then(...)
+    widget_factory/presentation/  # WidgetFactory<T> : exposer un widget à un host sans couplage
+bricks/                           # templates Mason (domain, data, presentation)
 ```
 
-**Conventions clés (revue archi)** :
-- Une feature colocalise ses couches `data/domain/presentation` sous `features/<universe>/<feature>/`.
-- Le domaine partagé entre features va dans `shared_domain/`.
-- Le **thème est porté par la feature** : `ThemeExtension` dans `presentation/lib/src/theme/`,
-  construit dans `providers_internal` depuis la palette DSM. Pas de `theme_manager`.
-- Pour exposer un widget à une autre feature/host : `WidgetFactory<T>` (utilitaire `widget_factory`)
-  déclarée en stub côté host (`providers_di`) et overridée en composition — jamais d'import feature→feature.
+**Ces trois packages sont vendorés depuis `flutter-front` — signaler un problème
+plutôt que les modifier** : `utilities/exceptions`, `utilities/givn`,
+`utilities/widget_factory`.
 
 ---
 
 ## Build and Development Commands
 
+Tout passe par **mise** (ou directement melos) :
+
 | Commande | Description |
 |----------|-------------|
-| `dart pub get` | Résout les dépendances du workspace |
-| `melos bootstrap` (`melos bs`) | Bootstrap de tous les packages |
-| `mason make data` / `domain` / `presentation` | Scaffold une couche d'un package (voir bricks) |
-| `dart run build_runner build --delete-conflicting-outputs` | Génère le code dans un package |
-| `melos run generate` | Génère le code sur tout le workspace |
-| `melos run analyze` | Analyse statique |
-| `dart format .` | Formatage |
-| `melos run test` | Lance les tests |
-| `flutter run` (depuis `apps/<app>`) | Lance l'app |
+| `mise run bs` | `dart pub get` + `melos bootstrap` (après tout changement de pubspec) |
+| `mise run generate` | Codegen sur tout le workspace (après avoir touché un `.br.dart`) |
+| `mise run analyze` | Analyse statique |
+| `mise run test` | Tous les tests |
+| `mise run format` | Formatage (120 colonnes) |
+| `flutter run` (depuis `apps/foot_scores`) | Lance l'app |
+
+**La barre verte avant tout commit** : `mise run generate && mise run format && mise run analyze && mise run test`.
+
+Un seul package : `(cd packages/features/scores/<feature>/<layer> && flutter test)`.
 
 ### Création d'un package
 
 On scaffolde via Mason, jamais à la main, pour garder la structure identique :
 
 ```bash
-mason make domain        # couche domain
-mason make data          # couche data
-mason make presentation  # couche presentation
+mason make domain       -o packages/features/<universe>/<feature>/domain       --name <feature>_domain       --classname <feature> --on-conflict overwrite
+mason make data         -o packages/features/<universe>/<feature>/data         --name <feature>_data         --classname <feature> --domainPackage <feature>_domain --on-conflict overwrite
+mason make presentation -o packages/features/<universe>/<feature>/presentation --name <feature>_presentation --classname <feature> --domainPackage <feature>_domain --on-conflict overwrite
 ```
+
+Puis la checklist de câblage (§ *Wiring a new feature*).
 
 ---
 
@@ -79,30 +91,38 @@ mason make presentation  # couche presentation
 
 ### Naming Conventions
 
-- Les fichiers avec code generation se terminent par `*.br.dart`
-- Toujours inclure le `part` : `part 'filename.br.g.dart';`
-- Enums de chemin de route : `{FeatureName}RoutePath`, colocalisé dans le fichier de route
-- Organiser les variables par ordre alphabétique
-- Null safety stricte — **ne jamais force-unwrap** (`!`)
+- Tout fichier qui a besoin de `build_runner` se termine par **`.br.dart`**, avec le
+  `part` correspondant : `part '<name>.br.g.dart'` (Riverpod),
+  `part '<name>.br.freezed.dart'` (freezed), `part '<name>.br.tailor.dart'`
+  (theme_tailor), `part '<name>.br.gr.dart'` (auto_route).
+- Le `build.yaml` de chaque package restreint les générateurs à `**/*.br.dart`.
+- Chaque package expose un `lib/src/package_name.dart` → `const packageName = '<pkg>';`
+  (utilisé comme tag de log).
+- Membres de classe : **champs d'abord, puis constructeur(s), puis méthodes** — widgets inclus.
+- Ordre alphabétique partout : paramètres de constructeur, champs, constantes d'enum,
+  imports, dépendances de pubspec.
+- Enums de chemin de route : `{FeatureName}RoutePath`, colocalisé dans le fichier de route.
+- Null safety stricte — **ne jamais force-unwrap** (`!`).
 
 ### Widget Guidelines
 
-- Ne jamais utiliser les widgets Material directement
-- Garder les widgets petits, focalisés, atomiques
-- Utiliser les constructeurs `const` dès que possible
-- Utiliser `RepaintBoundary` quand c'est utile pour la performance
+- Ne jamais utiliser les widgets Material directement dans une feature : passer par
+  les primitives de `tactics_components`.
+- Garder les widgets petits, focalisés, atomiques ; constructeurs `const` dès que possible.
+- Utiliser `RepaintBoundary` quand c'est utile pour la performance.
 
 ### Date/Time Handling
 
-- **Ne jamais utiliser `DateTime.now()` / `DateTime.timestamp()` directement**
-- Injecter une source de temps via un provider (en prod : utilitaire NTP `Kronos`)
+- **Ne jamais utiliser `DateTime.now()` / `DateTime.timestamp()` directement** dans de
+  la logique testable — injecter une source de temps via un provider (en prod :
+  utilitaire NTP `Kronos`).
 
 ### Import Policy
 
 | Scénario | Règle |
 |----------|-------|
 | Cross-package | Toujours des imports `package:` |
-| Interne (même package) | Imports relatifs |
+| Interne (même package) | Imports `package:<self>/src/...` (comme en prod) |
 | Isolation des features | NE JAMAIS importer `packages/features/X` dans `packages/features/Y` |
 | Clean Architecture | La couche Presentation ne doit pas importer de fichiers de la couche Data |
 
@@ -112,70 +132,127 @@ mason make presentation  # couche presentation
 
 ### Feature-First Architecture
 
-Chaque feature est indépendante et suit la Clean Architecture en interne :
-
 ```
 feature/
-├── data/
-│   ├── data_sources/    # APIs distantes/locales
-│   ├── dtos/            # Data Transfer Objects
-│   └── repositories/    # Implémentations de repository
-├── domain/
-│   ├── entities/        # Modèles métier purs
-│   ├── repositories/    # Interfaces de repository
-│   └── behaviors/       # Logique métier
-└── presentation/
-    ├── routing/         # Interface de routing + router + pages
-    ├── providers/       # Notifiers / Providers Riverpod
-    ├── widgets/         # Composants atomiques
-    └── pages/           # Écrans complets
+├── data/lib/src/
+│   ├── data_sources/     # source unique → implémente directement le contrat du domaine
+│   ├── dtos/             # *.br.dart (freezed + json_serializable)
+│   ├── mappers/          # extension <Dto>Mapper on <Dto> { Entity toEntity() }
+│   ├── providers_di.br.dart / providers_internal.br.dart / providers.br.dart / providers.dart
+├── domain/lib/src/
+│   ├── behaviors/        # logique métier, classes nommées par un verbe (GroupMatches, ToggleFavoriteMatch)
+│   ├── entities/         # *.br.dart (freezed)
+│   ├── repositories/     # contrats abstraits
+│   ├── providers_di.br.dart / providers_internal.br.dart / providers.br.dart
+└── presentation/lib/src/
+    ├── {feature}_screen.dart         # l'écran ; la Page (@RoutePage) vit dans routing/
+    ├── l10n/{feature}_strings.dart   # copie utilisateur (français), const par libellé
+    ├── notifiers/        # *_notifier.br.dart
+    ├── routing/          # {feature}_routing.dart (port) + {feature}_router.br.dart (pages + RoutePath)
+    ├── theme/            # {feature}_theme.br.dart (@TailorMixinComponent)
+    ├── widgets/
+    ├── providers_di.br.dart / providers_internal.br.dart / providers.dart
 ```
 
 ### Layer Dependencies
 
-- **Domain** : toujours indépendant (aucun import de Data ni Presentation)
-- **Data** : dépend uniquement de Domain
-- **Presentation** : dépend uniquement de Domain
+- **Domain** : indépendant (aucun import de Data ni Presentation)
+- **Data** : dépend uniquement de son domain
+- **Presentation** : dépend uniquement de son domain, jamais de Data
+- **Composition** (`app_providers`, `app_router`) : la seule couche autorisée à connaître
+  toutes les features à la fois, et la seule à appeler `bindProviders(...)`
+
+### Le triplet de providers + `bindProviders`
+
+Chaque package qui expose des providers suit la même forme :
+
+- **`providers_di.br.dart`** — *contrats entrants*. Chaque provider `throw
+  UnregisteredProviderException(...)` jusqu'à ce que la composition le fournisse.
+  **Ce fichier n'est jamais exporté par le barrel du package.**
+- **`providers_internal.br.dart`** — câblage interne / défauts (data sources, thème par
+  défaut dérivé de la palette DSM). Pas l'API publique.
+- **`providers.br.dart` / `providers.dart`** — l'API publique : les providers que les
+  autres packages consomment, plus un `bindProviders({...})` qui retourne `List<Override>`.
+
+La composition n'appelle que `bindProviders(...)` ; elle n'override jamais un symbole de
+`providers_di` directement.
+
+**La présentation ne lit jamais un contrat de repository.** Elle lit des providers d'état
+(`watchMatchGroupsProvider`, `favoriteMatchIdsProvider`) et appelle des **behaviors**
+exposés comme providers (`toggleFavoriteMatchProvider`). Pour toute nouvelle action
+transverse : ajouter une petite classe dans `src/behaviors/` du domaine et l'exposer
+depuis `providers.br.dart`, plutôt que d'exporter le repository brut.
 
 ### Routing Architecture
 
-Toute feature avec navigation expose une **interface de routing** (un *port*) :
+Toute feature **avec navigation** expose une **interface de routing** (un *port*) :
 la feature émet des **intentions**, **résultats** ou **fermetures**, et
-l'implémentation du router (composition / app) les traduit en navigation
-concrète. On nomme les méthodes par événement, jamais par impératif.
+l'implémentation côté composition (`app_router`) les traduit en navigation concrète.
+On nomme les méthodes par évènement, jamais par impératif.
 
 | Type | Quand | Pattern | Exemples |
 |------|-------|---------|----------|
-| Intent | L'utilisateur démarre/continue un flux | `on…Requested` | `onSignInRequested`, `onForgotPasswordRequested` |
-| Outcome | Une étape réussit | `on…Successful`, `on…Sent` | `onAuthenticationSuccessful`, `onLinkSent` |
+| Intent | L'utilisateur démarre/continue un flux | `on…Requested` | `onMatchDetailRequested`, `onSignInRequested` |
+| Outcome | Une étape réussit | `on…Successful`, `on…Sent` | `onAuthenticationSuccessful` |
 | Dismiss | L'utilisateur ferme/annule | `onDismiss…`, `onCancel` | `onDismissErrorModal` |
 
-À éviter : `navigateTo…` / `goTo…` / `push…` (la destination appartient au
-router), `onTap…` / `on…Clicked` / `on…Pressed` (décrire l'intention, pas le geste).
+À éviter : `navigateTo…` / `goTo…` / `push…` (la destination appartient au router),
+`onTap…` / `on…Clicked` / `on…Pressed` (décrire l'intention, pas le geste).
 
 Les segments de chemin sont définis via des **enums colocalisés**
 `{FeatureName}RoutePath` (valeurs triées alphabétiquement) — jamais de chaîne en dur.
+Le `RoutePath` de `app_router` ne contient que les chemins de premier niveau.
+
+Une feature **sans** navigation propre (ici En direct et Favoris) n'a pas de port de
+routing : seulement un `{feature}_router.br.dart` déclarant sa page et son chemin.
 
 ### Riverpod Guidelines
 
 1. Riverpod V3 avec code generation (annotation `@riverpod`)
 2. `ref.select` pour n'écouter qu'une propriété et éviter les rebuilds
 3. `AsyncValue` pour les états async (data, error, loading)
-4. `overrideWith` pour l'injection de dépendances et les tests
+4. `bindProviders` / `overrideWith` pour l'injection de dépendances et les tests
 5. Providers petits et à responsabilité unique
-6. Patterns `Notifier` et `AsyncNotifier` pour le state
+6. Patterns `Notifier` et `AsyncNotifier` pour le state — le générateur **retire le
+   suffixe `Notifier`** : `class ScoresFilterNotifier` → `scoresFilterProvider`
 7. Accéder aux dimensions/config via des providers dédiés — jamais de hardcode
-8. **Le triple de providers** :
-   - `providers_di.br.dart` = dépendances **entrantes** uniquement (stubs qui throw jusqu'à override)
-   - `providers_internal.br.dart` = câblage **interne** (data sources, theme par défaut) — pas l'API publique
-   - `providers.br.dart` / `providers.dart` = **API publique** Riverpod (use cases, state, proxies)
+
+### Partage de widgets entre features
+
+Pour exposer un widget à une autre feature sans import feature → feature :
+`WidgetFactory<T>` (utilitaire `widget_factory`), déclarée en contrat dans le
+`providers_di.br.dart` du **consommateur** et fournie par la composition via son
+`bindProviders(...)`. Les arguments sont des types de `shared_domain` ou des records
+structurels — jamais un type appartenant à une autre feature.
+
+---
+
+## Wiring a new feature
+
+1. **Routes & pages** — dans `presentation`, `lib/src/routing/{feature}_router.br.dart`
+   déclare l'enum `{Feature}RoutePath` et les widgets `@RoutePage`.
+2. **Port de routing** — `lib/src/routing/{feature}_routing.dart` déclare les évènements
+   de navigation, alimenté via `providers_di.br.dart` (`{feature}RoutingProvider`, qui throw).
+3. **`app_router`** — ajouter le package presentation à son `pubspec.yaml`, ajouter les
+   `AutoRoute(page: {Feature}Route.page, path: {Feature}RoutePath.x.path)` à
+   `AppRouter.routes`, et créer `lib/src/routing/app_{feature}_routing.dart`.
+4. **`app_providers`** — ajouter les packages domain/data/presentation à son `pubspec.yaml`,
+   puis `...{feature}_data.bindProviders()` et
+   `...{feature}_presentation.bindProviders(routing: (ref) => App{Feature}Routing(...))`.
+5. **Thème** — rien à faire : chaque feature porte son propre thème par défaut dans son
+   `providers_internal.br.dart`. Passer `theme:` à `bindProviders` seulement pour le
+   surcharger (marque, dark mode, A/B).
 
 ---
 
 ## Testing Instructions
 
-Les tests spécifient le **comportement**, pas l'implémentation. Un test unitaire
-ne doit échouer que si le **comportement** change, pas lors d'un refactor.
+Les tests spécifient le **comportement**, pas l'implémentation. Un test unitaire ne doit
+échouer que si le **comportement** change, pas lors d'un refactor.
+
+Les tests vivent dans `test/unit/src/` en miroir de `lib/src/`, utilisent les assertions
+**shouldly** (`.should.be(...)`, `.should.beTrue()`) et le DSL **givn**
+`given(...).when(...).then(...)`.
 
 ### Structure Given / When / Then
 
@@ -185,8 +262,8 @@ ne doit échouer que si le **comportement** change, pas lors d'un refactor.
 | **When** | Action — ce qui se passe |
 | **Then** | Résultat observable — ce qui doit être vrai ensuite |
 
-Les chaînes `given` / `when` / `then` sont des **descriptions de comportement**
-pour un humain : elles se lisent comme une spec, pas comme du code.
+Les chaînes `given` / `when` / `then` sont des **descriptions de comportement** pour un
+humain : elles se lisent comme une spec, pas comme du code.
 
 ### Descriptions orientées comportement (BDD)
 
@@ -202,20 +279,20 @@ pour un humain : elles se lisent comme une spec, pas comme du code.
 
 ### Quoi tester
 
-- **Tester** : use cases / services, repositories / data sources, mappers,
-  state holders (providers/notifiers), fonctions avec vraie logique
-- **Souvent ignorer** : constructeurs triviaux, DTOs sans logique, helpers privés
-  isolés, comportement du framework, sérialisation générée
-- **Asserter sur le comportement** : règles métier, branchements, effets de bord,
-  gestion d'erreur, changements de state. Préférer asserter les **outputs et le State** ;
-  réserver `verify` aux **effets de bord** (ex: analytics)
+- **Tester** : behaviors, repositories / data sources, mappers, state holders
+  (providers/notifiers), fonctions avec vraie logique
+- **Souvent ignorer** : constructeurs triviaux, DTOs sans logique, helpers privés isolés,
+  comportement du framework, sérialisation générée
+- **Asserter sur le comportement** : règles métier, branchements, effets de bord, gestion
+  d'erreur, changements de state. Préférer asserter les **outputs et le State** ; réserver
+  `verify` aux **effets de bord** (ex: analytics)
 - **Un test, un comportement**
 
 ### Riverpod dans les tests
 
 - N'overrider que les dépendances **directes** ; ne pas remplacer tout le graphe
-- Riverpod déconseille de mocker les Notifiers : tester via les use cases /
-  data sources, ou structurer l'API pour rendre le comportement observable
+- Riverpod déconseille de mocker les Notifiers : tester via les behaviors / data sources,
+  ou structurer l'API pour rendre le comportement observable
 
 ---
 
@@ -233,8 +310,8 @@ Exemple : `feat/ITFRARC-123_user_authentication`
 Format : `<type>[optional scope]: <description>`
 
 ```
-feat(auth): add OAuth2 authentication support
-fix(ui): resolve login button alignment on iPhone SE
+feat(matchs): add match detail route
+fix(ui): resolve favorite star alignment on iPhone SE
 ```
 
 - Mode impératif : « add » pas « added »
@@ -247,12 +324,14 @@ fix(ui): resolve login button alignment on iPhone SE
 ### Logging
 
 - **Ne jamais utiliser `print()` ou `debugPrint()`**
-- Toujours passer par un logger injecté via provider (en prod : utilitaire `Timber`)
+- Passer par un logger, taggé avec le `packageName` du package (en prod : utilitaire `Timber`)
 
 ### Error Reporting
 
 - Reporter les exceptions attrapées via les providers APM/Crashlytics
 - Ne jamais implémenter de tracking brut dans les features
+- Les exceptions sont réservées aux **erreurs de programmation**
+  (`UnregisteredProviderException` = contrat DI jamais fourni)
 
 ---
 
@@ -260,41 +339,35 @@ fix(ui): resolve login button alignment on iPhone SE
 
 ### Token Usage
 
-- **Jamais de couleur brute** (`0xFF...`, `Colors.red`) ni de valeur hardcodée
-- Toujours utiliser les thèmes et composants du DSM
-- Accéder aux tokens via `context.theme` ou les extensions équivalentes
-
-### Components
-
-- Préférer les molecules/organisms du DSM avant de construire un widget custom
-- Principes de l'atomic design (atoms → molecules → organisms)
+- **Jamais de couleur brute** (`0xFF...`, `Colors.red`) ni de valeur hardcodée dans une feature
+- Les tokens vivent dans `tactics_components` : `TacticsPalette`, `TacticsRadius`,
+  `TacticsSpacing`, `TacticsIcons`
 
 ### Theming
 
-Chaque feature avec du style propre expose un `ThemeExtension`
-(`@TailorMixinComponent`), alimenté depuis les tokens globaux dans la couche de
-composition — ce qui permet de surcharger le style sans toucher la feature.
+Chaque feature expose un `ThemeExtension` généré par **theme_tailor**
+(`@TailorMixinComponent`) dans `presentation/lib/src/theme/{feature}_theme.br.dart`, avec
+des **tokens sémantiques concrets** (couleurs, `TextStyle`, doubles) — jamais la palette
+brute. Le défaut est construit depuis la palette DSM dans `providers_internal.br.dart` ;
+`providers_di.br.dart` expose le contrat `{feature}ThemeProvider` qui pointe dessus, ce qui
+permet de le surcharger en composition sans toucher la feature.
 
-```dart
-// presentation/lib/src/theme/{feature}_theme.br.dart
-@TailorMixinComponent()
-class FeatureTheme extends ThemeExtension<FeatureTheme> with _$FeatureThemeTailorMixin {
-  @override
-  final Color backgroundColor;
-
-  const FeatureTheme({required this.backgroundColor});
-}
-```
+- **`tactics_components`** : utilisable directement dans une feature (widgets, tokens)
+- **`tactics_providers`** : à ne **JAMAIS** importer dans une feature — passer par le thème
+  de la feature. Seule la composition lit `tacticsPaletteProvider`.
+- Accès au thème : `ref.watch({feature}ThemeProvider.select((theme) => theme.xxx))`
 
 ---
 
 ## AI Automation
 
 - `CLAUDE.md` est le point d'entrée : il importe ce fichier et les règles de
-  `.claude/rules/` à chaque session.
-- `.claude/rules/` : `comments`, `dart-line-breaks`, `feature`, `local-storage`,
-  `orientation`, `platform-brightness`, `translations`.
+  `.claude/rules/` (`comments`, `dart-line-breaks`) à chaque session.
 - `.mcp.json` enregistre le serveur **`dart`** (`dart mcp-server`) — préférer ses
   outils (analyse, hot reload, devices, tests, runtime errors) aux appels shell `flutter`/`dart`.
-- `mason.yaml` + `bricks/` : les templates de scaffolding qui garantissent que
-  chaque couche générée a la même structure que le repo de prod.
+- `mason.yaml` + `bricks/` : les templates de scaffolding qui garantissent que chaque
+  couche générée a la même structure que le repo de prod. **Ne pas les modifier à la
+  légère** — ils affectent tous les scaffolds futurs.
+- Le code généré (`*.g.dart`, `*.gr.dart`, `*.freezed.dart`, `*.tailor.dart`) est
+  **commité** : lancer `mise run generate` et commiter le résultat dans le même
+  changement que la source.

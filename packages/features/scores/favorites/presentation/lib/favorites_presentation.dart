@@ -1,3 +1,3 @@
-export 'src/favorites_page.dart';
-export 'src/favorites_page_widget_factory.dart';
-export 'src/providers_di.dart';
+export 'src/providers.dart';
+export 'src/routing/favorites_router.br.dart';
+export 'src/theme/favorites_theme.br.dart';

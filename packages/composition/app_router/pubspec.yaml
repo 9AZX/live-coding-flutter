@@ -1,0 +1,32 @@
+name: app_router
+description: Composition — routeur racine AutoRoute, shell à onglets et implémentations des ports de routing.
+version: 0.0.1
+
+environment:
+  flutter: ">=3.27.0"
+  sdk: ">=3.11.0 <4.0.0"
+resolution: workspace
+
+dependencies:
+  auto_route: ^11.1.0
+  favorites_presentation:
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^3.2.1
+  live_presentation:
+  matchs_presentation:
+  riverpod_annotation: ^4.0.2
+  tactics_components:
+  tactics_providers:
+
+dev_dependencies:
+  auto_route_generator: ^10.4.0
+  build_runner: ^2.15.0
+  flutter_test:
+    sdk: flutter
+  givn:
+  riverpod_generator: ^4.0.3
+  shouldly: ^0.5.0+1
+
+flutter:
+  uses-material-design: true

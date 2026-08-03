@@ -4,7 +4,7 @@ publish_to: "none"
 version: 0.1.0+1
 
 environment:
-  sdk: ">=3.11.0-0 <4.0.0"
+  sdk: ">=3.11.0 <4.0.0"
 
 # Dart pub workspace : chaque app et chaque package résolvent leurs deps ensemble.
 workspace:
@@ -19,18 +19,36 @@ melos:
   name: flutter_workspace
 
   scripts:
-    bs:
-      run: melos bootstrap
-      description: Bootstrap de tous les packages.
-
     analyze:
-      run: melos exec -- dart analyze .
+      # L'analysis server crashe quand plusieurs `dart analyze` tournent en parallèle
+      # (même contournement qu'en prod) : concurrence à 1 par défaut, surchargeable
+      # via MELOS_ANALYZE_CONCURRENCY.
+      run: melos exec -c ${MELOS_ANALYZE_CONCURRENCY:-1} -- dart analyze .
       description: Analyse statique sur tout le workspace.
 
     test:
-      run: melos exec --dir-exists=test -- flutter test
+      run: melos exec -c 1 --dir-exists=test -- flutter test
       description: Lance les tests de tous les packages qui en ont.
 
     generate:
-      run: melos exec --depends-on=build_runner -- dart run build_runner build --delete-conflicting-outputs
+      run: melos exec --depends-on=build_runner -- dart run build_runner build
       description: Génère le code (riverpod, freezed, auto_route, theme_tailor).
+
+    format:
+      # Le code généré n'est pas formaté (comme en prod) : build_runner l'écrit à sa
+      # propre largeur, et le reformater à 120 le ferait diverger à chaque codegen.
+      # `bricks/` est aussi exclu : ce sont des templates mustache, pas du Dart valide.
+      run: |
+        # La liste est matérialisée d'abord : un résultat vide ne doit PAS atteindre
+        # `dart format` sans chemin, sinon il formaterait tout le cwd (comme en prod).
+        FORMAT_FILES=$(find apps packages -type f -name "*.dart" \
+          -not -path "*/.dart_tool/*" \
+          -not -path "*/build/*" \
+          -not -name "*.freezed.dart" \
+          -not -name "*.g.dart" \
+          -not -name "*.gr.dart" \
+          -not -name "*.mocks.dart" \
+          -not -name "*.tailor.dart")
+
+        if [ -n "$FORMAT_FILES" ]; then printf '%s\n' "$FORMAT_FILES" | xargs dart format; fi
+      description: Formate le code source (120 colonnes, hors code généré).

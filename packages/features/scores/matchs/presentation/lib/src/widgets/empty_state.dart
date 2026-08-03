@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:matchs_presentation/src/theme/scores_theme.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:matchs_presentation/src/providers_di.br.dart';
 
 /// État vide centré : icône estompée + titre + sous-titre.
-class EmptyState extends StatelessWidget {
-  const EmptyState({required this.icon, required this.title, required this.subtitle, super.key});
-
+class EmptyState extends ConsumerWidget {
   final IconData icon;
-  final String title;
   final String subtitle;
+  final String title;
+
+  const EmptyState({required this.icon, required this.subtitle, required this.title, super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final theme = context.scoresTheme;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = ref.watch(matchsThemeProvider.select((theme) => theme.emptyStateTheme));
 
     return Center(
       child: Padding(
@@ -19,24 +20,11 @@ class EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 44, color: theme.palette.n200),
+            Icon(icon, size: 44, color: theme.iconColor),
             const SizedBox(height: 14),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: theme.palette.fontBrand,
-                fontWeight: FontWeight.w800,
-                fontSize: 18,
-                color: theme.palette.night,
-              ),
-            ),
+            Text(title, textAlign: TextAlign.center, style: theme.titleTextStyle),
             const SizedBox(height: 6),
-            Text(
-              subtitle,
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13, height: 1.5, color: theme.palette.n300),
-            ),
+            Text(subtitle, textAlign: TextAlign.center, style: theme.subtitleTextStyle),
           ],
         ),
       ),

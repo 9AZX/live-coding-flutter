@@ -25,13 +25,15 @@ domaine, data (+ DTO), présentation, navigation, injection de dépendances.
 ## 🗺️ L'architecture en un coup d'œil
 
 ```
-shared_domain/scores/domain   →  les "règles" : entités (Match…) + interfaces + use cases
+shared_domain/scores/domain   →  les "règles" : entités (Match…) + contrats + behaviors
 features/scores/
   matchs/data                 →  l'implémentation réelle (API TheSportsDB)
-  matchs/presentation         →  l'UI partagée (widgets, thème) + la page Matchs
+  matchs/presentation         →  l'UI partagée (widgets, thème) + l'écran Matchs
   live / favorites            →  les autres onglets
-  match_detail/presentation   →  ⛔ À CRÉER (la page de détail)
-composition/                  →  assemble les features entre elles
+  match_detail/presentation   →  ⛔ À CRÉER (l'écran de détail)
+composition/
+  app_providers               →  agrège tous les bindProviders()
+  app_router                  →  AppRouter (AutoRoute) + impls des ports de routing
 ```
 
 **Règle d'or** : une feature **n'importe jamais** une autre feature. Ce qui est
@@ -44,9 +46,12 @@ partagé passe soit par `shared_domain`, soit par **injection** (on verra).
 Commandes que tu vas répéter :
 
 ```bash
-# (re)générer le code après avoir touché un fichier annoté @riverpod / @freezed
-# Ou utilise package sur VSCode build runner context menu (fait par votre serviteur)
-cd <le_package_modifié> && dart run build_runner build --delete-conflicting-outputs
+# (re)générer le code après avoir touché un fichier .br.dart (@riverpod / @freezed / …)
+mise run generate                  # tout le workspace
+cd <le_package_modifié> && dart run build_runner build   # ou juste un package
+
+# vérifier
+mise run analyze && mise run test
 
 # lancer l'app
 cd apps/foot_scores && flutter run
@@ -70,8 +75,8 @@ Ajoute une méthode à l'interface (remplace le `// WORKSHOP`) :
 Stream<Match?> watchMatch(String id);
 ```
 
-**Fichier** `lib/src/providers.dart`
-Expose le use case :
+**Fichier** `lib/src/providers.br.dart`
+Expose le provider (juste sous `watchMatchGroups`, où se trouve le `// WORKSHOP`) :
 ```dart
 @riverpod
 Stream<Match?> watchMatch(Ref ref, String id) =>
@@ -83,7 +88,7 @@ Stream<Match?> watchMatch(Ref ref, String id) =>
 
 **✅ Vérifie**
 ```bash
-cd packages/shared_domain/scores/domain && dart run build_runner build --delete-conflicting-outputs
+cd packages/shared_domain/scores/domain && dart run build_runner build
 ```
 👉 Un `flutter analyze` global va maintenant **râler** : l'implémentation ne
 respecte plus le contrat. **C'est normal** — on la corrige à l'étape 2.
@@ -151,59 +156,55 @@ abstract class TimelineEntryDto with _$TimelineEntryDto {
 > `strPlayer`, `intSquadNumber`).
 
 ### 2.3 — Le mapper (DTO → entité du domaine)
-**Fichier** `lib/src/api/the_sports_db_mapper.dart` : ajoute `toEvents` /
-`toLineups` qui prennent les **DTOs** (un but = `strTimeline == 'Goal'`, équipe à
-domicile = `strHome == 'Yes'`).
+**Fichier** `lib/src/mappers/event_dto_mapper.dart` : les mappers sont des
+**extensions** sur le DTO (`extension EventDtoMapper on EventDto { Match toEntity() }`).
+Ajoute sur le même modèle `toEvents` / `toLineups` pour tes nouveaux DTOs (un but =
+`strTimeline == 'Goal'`, équipe à domicile = `strHome == 'Yes'`).
 
 ### 2.4 — Implémenter le contrat
 **Fichier** `lib/src/data_sources/the_sports_db_scores_data_source.dart` :
 ```dart
 @override
 Stream<Match?> watchMatch(String id) => Stream.fromFuture(_fetchDetail(id));
-// _fetchDetail : event + timeline + lineup → mapper.toMatch(base, events:…, lineups:…)
+// _fetchDetail : event + timeline + lineup → dto.toEntity(events: …, lineups: …)
 ```
 
 **✅ Vérifie**
 ```bash
-cd packages/features/scores/matchs/data && dart run build_runner build --delete-conflicting-outputs
-flutter analyze   # l'erreur de l'étape 1 doit disparaître ✅
+cd packages/features/scores/matchs/data && dart run build_runner build
+mise run analyze   # l'erreur de l'étape 1 doit disparaître ✅
 ```
 
 ---
 
 ## Étape 3 — Le clic 👆  (`features/scores/matchs/presentation`)
 
-**Objectif** : rendre une ligne de match cliquable, **sans** que `matchs` ne
-connaisse la page de détail. On passe par un **port** (une interface de
-navigation) ; l'implémentation viendra de la composition (étape 6).
+**Objectif** : comprendre comment `matchs` demande l'ouverture du détail **sans**
+connaître l'écran de détail. Ça passe par un **port** — une interface de navigation
+que la composition implémente (étape 6).
 
-1. Crée le port `lib/src/routing/scores_routing.dart` :
+Cette partie est **déjà en place**, lis-la plutôt que de l'écrire :
+
+1. Le port `lib/src/routing/matchs_routing.dart` :
    ```dart
-   abstract interface class ScoresRouting {
-     void onMatchSelected(BuildContext context, String matchId);
+   abstract interface class MatchsRouting {
+     void onMatchDetailRequested(String matchId);
    }
    ```
-2. Crée le stub `lib/src/routing/providers_di.dart` :
+   Les méthodes sont nommées par **évènement** (`on…Requested`), jamais par
+   impératif (`navigateTo…`) : la destination appartient au router.
+2. Le contrat dans `lib/src/providers_di.br.dart`, qui `throw
+   UnregisteredProviderException` jusqu'à ce que la composition le fournisse.
+3. `lib/src/widgets/match_row.dart` émet déjà l'intention :
    ```dart
-   @riverpod
-   ScoresRouting scoresRouting(Ref ref) =>
-       throw UnimplementedError('scoresRoutingProvider doit être overridé');
+   onTap: () => ref.read(matchsRoutingProvider).onMatchDetailRequested(match.id),
    ```
-3. Dans `lib/src/widgets/match_row.dart` (remplace le `// WORKSHOP`), enveloppe
-   la rangée :
-   ```dart
-   GestureDetector(
-     behavior: HitTestBehavior.opaque,
-     onTap: () => ref.read(scoresRoutingProvider).onMatchSelected(context, match.id),
-     child: /* le Container existant */,
-   )
-   ```
-4. Exporte le port + le provider dans `lib/matchs_presentation.dart`.
+4. Côté composition, `packages/composition/app_router/lib/src/routing/app_matchs_routing.dart`
+   implémente le port… avec un corps **vide** (`// WORKSHOP`). D'où le symptôme :
+   tu tapes un match, rien ne se passe. Tu le rempliras à l'étape 6.
 
-**✅ Vérifie**
-```bash
-cd packages/features/scores/matchs/presentation && dart run build_runner build --delete-conflicting-outputs
-```
+> 💡 À retenir : la feature émet une intention, la composition décide de la
+> destination. C'est ce qui permet à `matchs` d'ignorer l'existence du détail.
 
 ---
 
@@ -219,21 +220,25 @@ mason get
 mason make presentation \
   -o packages/features/scores/match_detail/presentation \
   --name match_detail_presentation \
-  --classname match_detail
+  --classname match_detail \
+  --domainPackage scores_domain
 ```
 
-> Sans les flags `--name/--classname`, Mason te **pose les questions**
-> (« Nom du package ? » → `match_detail_presentation`, « Nom de la feature ? »
-> → `match_detail`).
+> Sans les flags, Mason te **pose les questions** (« Nom du package ? » →
+> `match_detail_presentation`, « Nom de la feature ? » → `match_detail`,
+> « Nom du package domain ? » → `scores_domain`).
 
-Ça crée `pubspec.yaml` (déjà bon : `resolution: workspace`, deps
-`flutter`/`flutter_riverpod`/`scores_domain`/`tactics_theme`), le barrel
-`match_detail_presentation.dart` et un `MatchDetailPage` placeholder.
+Ça crée toute la structure conforme au repo de prod : `pubspec.yaml`, `build.yaml`,
+`package_name.dart`, le triplet `providers_di.br` / `providers_internal.br` /
+`providers.dart`, le port `match_detail_routing.dart`, le router
+`match_detail_router.br.dart` (enum `MatchDetailRoutePath` + `@RoutePage`), un thème
+theme_tailor, et un test placeholder.
 
 **✅ Vérifie**
 ```bash
-flutter pub get
-flutter analyze packages/features/scores/match_detail/presentation
+mise run bs
+cd packages/features/scores/match_detail/presentation && dart run build_runner build
+mise run analyze
 ```
 
 ---
@@ -246,7 +251,7 @@ flutter analyze packages/features/scores/match_detail/presentation
 1. `lib/src/widgets/event_tile.dart` — une ligne de timeline (minute, icône
    but/carton, joueur).
 2. `lib/src/widgets/lineup_section.dart` — une composition (équipe + onze).
-3. `lib/src/match_detail_page.dart` — `ConsumerWidget` :
+3. `lib/src/match_detail_screen.dart` — `ConsumerWidget` qui prend le `matchId` :
    ```dart
    final match = ref.watch(watchMatchProvider(matchId));
    return match.when(
@@ -255,45 +260,79 @@ flutter analyze packages/features/scores/match_detail/presentation
      data: (m) => ...,       // en-tête + onglets Résumé (m!.events) / Compo (m.lineups)
    );
    ```
-4. Barrel `lib/match_detail_presentation.dart` → `export 'src/match_detail_page.dart';`
+4. Dans `lib/src/routing/match_detail_router.br.dart`, passe le `matchId` en
+   paramètre de route et déclare le chemin absolu :
+   ```dart
+   enum MatchDetailRoutePath {
+     matchDetail(path: '/match/:id');
+     // …
+   }
 
-**✅ Vérifie** : `flutter analyze` (le package doit compiler seul).
+   @RoutePage(name: 'MatchDetailRoute')
+   class MatchDetailPage extends ConsumerWidget {
+     final String matchId;
+
+     const MatchDetailPage({@PathParam('id') required this.matchId, super.key});
+
+     @override
+     Widget build(BuildContext context, WidgetRef ref) => MatchDetailScreen(matchId: matchId);
+   }
+   ```
+5. Les couleurs et styles viennent de **ton** thème
+   (`ref.watch(matchDetailThemeProvider.select(…))`), alimenté par défaut depuis la
+   palette DSM dans `providers_internal.br.dart`. Jamais de couleur brute, jamais
+   d'import de `tactics_providers`.
+
+**✅ Vérifie** : `dart run build_runner build` puis `mise run analyze` (le package
+doit compiler seul).
 
 ---
 
-## Étape 6 — Brancher la navigation 🔗  (`composition/composition_root`)
+## Étape 6 — Brancher la navigation 🔗  (`composition/`)
 
-**Objectif** : connecter le port (étape 3) à la vraie page (étape 5). C'est **le
-seul endroit** qui connaît les deux features à la fois.
+**Objectif** : connecter le port (étape 3) au vrai écran (étape 5). La composition
+est **le seul endroit** qui connaît les deux features à la fois.
 
-1. Nouveau `lib/src/app_scores_routing.dart` :
+Dans **`packages/composition/app_router`** :
+
+1. `pubspec.yaml` : ajoute la dep `match_detail_presentation:`.
+2. `lib/src/app_router.br.dart` : déclare la route (remplace le `// WORKSHOP`) :
    ```dart
-   class AppScoresRouting implements ScoresRouting {
-     const AppScoresRouting();
-     @override
-     void onMatchSelected(BuildContext context, String matchId) =>
-         Navigator.of(context).push(MaterialPageRoute<void>(
-           builder: (_) => MatchDetailPage(matchId: matchId),
-         ));
-   }
+   AutoRoute(page: MatchDetailRoute.page, path: MatchDetailRoutePath.matchDetail.path),
    ```
-2. Dans `lib/src/providers.dart`, ajoute l'override dans `scoresAppOverrides()` :
+3. `lib/src/routing/app_matchs_routing.dart` : remplis le corps vide :
    ```dart
-   scoresRoutingProvider.overrideWithValue(const AppScoresRouting()),
+   @override
+   void onMatchDetailRequested(String matchId) => _router.push(MatchDetailRoute(matchId: matchId));
    ```
-3. `pubspec.yaml` : ajoute les deps `match_detail_presentation` et
-   `matchs_presentation`.
+4. `dart run build_runner build` dans `app_router` (AutoRoute doit régénérer
+   `app_router.br.gr.dart` avec la nouvelle route).
+
+Dans **`packages/composition/app_providers`** :
+
+5. `pubspec.yaml` : ajoute la dep `match_detail_presentation:`.
+6. `lib/src/app_providers.dart` : fournis le port de la nouvelle feature :
+   ```dart
+   ...match_detail_presentation.bindProviders(
+     routing: (ref) => const AppMatchDetailRouting(),
+   ),
+   ```
+   (avec un `AppMatchDetailRouting` dans `app_router`, même forme que
+   `AppMatchsRouting` — par exemple pour gérer le retour.)
 
 ---
 
 ## Étape 7 — Lancer 🎉
 
 ```bash
-flutter pub get
-flutter analyze            # objectif : "No issues found!"
+mise run bs
+mise run generate
+mise run format
+mise run analyze           # objectif : "No issues found!"
+mise run test
 cd apps/foot_scores && flutter run
 ```
-Tape un match → la page Détail s'ouvre. **Bravo !** 🥳
+Tape un match → l'écran Détail s'ouvre. **Bravo !** 🥳
 
 ---
 
@@ -301,13 +340,17 @@ Tape un match → la page Détail s'ouvre. **Bravo !** 🥳
 
 1. **On code de l'intérieur vers l'extérieur** : le contrat (domaine) d'abord,
    puis la data, puis l'UI, puis le câblage.
-2. **Une feature n'en importe jamais une autre.** La page Matchs ne connaît pas
-   la page Détail : elle émet une *intention* via le **port** `ScoresRouting`,
-   et la **composition** décide quoi faire.
+2. **Une feature n'en importe jamais une autre.** L'écran Matchs ne connaît pas
+   l'écran Détail : il émet une *intention* via le **port** `MatchsRouting`, et la
+   **composition** décide de la destination.
+   Corollaire : un contrat DI (`providers_di.br.dart`) `throw` tant que personne ne
+   l'a fourni — l'erreur est immédiate et explicite, jamais un `null` silencieux.
 3. **Un DTO** isole le JSON de l'API du reste du code : si l'API change, tu ne
    corriges qu'un seul endroit.
-4. **`build_runner`** régénère le code annoté (`@riverpod`, `@freezed`) — relance-le
-   à chaque fois que `analyze` parle de `_$...` ou de `.g.dart`.
+4. **`build_runner`** régénère le code annoté (`@riverpod`, `@freezed`,
+   `@TailorMixinComponent`, `@RoutePage`) — relance-le à chaque fois que `analyze`
+   parle de `_$...`, `.g.dart`, `.freezed.dart`, `.tailor.dart` ou `.gr.dart`.
+   Seuls les fichiers en **`.br.dart`** sont passés aux générateurs.
 
 ---
 
@@ -316,9 +359,12 @@ Tape un match → la page Détail s'ouvre. **Bravo !** 🥳
 - **`The method '…' isn't defined` / `Missing concrete implementation`** → tu as
   changé une interface mais pas (encore) l'implémentation, ou il faut relancer
   `build_runner`.
-- **`Target of URI doesn't exist: '….g.dart'`** → lance `build_runner` dans ce
-  package.
+- **`Target of URI doesn't exist: '….g.dart'` / `.gr.dart` / `.tailor.dart`** →
+  lance `build_runner` dans ce package (et vérifie que le fichier source finit bien
+  en `.br.dart`, sinon les générateurs l'ignorent).
+- **`UnregisteredProviderException`** → un contrat DI n'a pas été fourni : ajoute
+  l'appel `bindProviders(...)` correspondant dans `app_providers`.
 - **L'écran est vide / une erreur réseau** → regarde la console, les logs
-  `[thesportsdb]` montrent chaque appel API et son résultat.
+  `[matchs_data]` montrent chaque appel API et son résultat.
 - **Perdu ?** → `grep -rn "WORKSHOP" packages` pour retrouver tous les points à
   compléter.

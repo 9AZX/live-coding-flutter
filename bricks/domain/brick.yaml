@@ -1,5 +1,5 @@
 name: domain
-description: Scaffold une couche domain (feature) conforme à ce repo.
+description: Scaffold une couche domain conforme aux conventions Betclic (entités, contrats, behaviors, triplet de providers).
 version: 0.1.0+0
 
 environment:

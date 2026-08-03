@@ -4,8 +4,8 @@ enum MatchDay {
   today(0),
   tomorrow(1);
 
-  const MatchDay(this.offset);
-
   /// Décalage en jours par rapport à aujourd'hui.
   final int offset;
+
+  const MatchDay(this.offset);
 }

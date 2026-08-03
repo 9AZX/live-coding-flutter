@@ -2,22 +2,20 @@ import 'dart:developer' as developer;
 
 import 'package:matchs_data/src/api/the_sports_db_client.dart';
 import 'package:matchs_data/src/api/the_sports_db_config.dart';
-import 'package:matchs_data/src/api/the_sports_db_mapper.dart';
 import 'package:matchs_data/src/dtos/event_dto.br.dart';
+import 'package:matchs_data/src/mappers/event_dto_mapper.dart';
+import 'package:matchs_data/src/package_name.dart';
 import 'package:scores_domain/scores_domain.dart';
 
-/// Source de données réelle TheSportsDB. Implémente la même interface que les
-/// autres sources : seule la couche data change.
+/// Source de données réelle TheSportsDB. Implémente directement le contrat du
+/// domaine : une seule source, donc pas de classe repository intermédiaire.
 ///
 /// WORKSHOP : `watchMatch(id)` (détail) à reconstruire — récupérer l'event, sa
 /// timeline et ses compositions, puis mapper vers un `Match` enrichi.
-class TheSportsDbScoresDataSource implements ScoresRepository {
-  TheSportsDbScoresDataSource({TheSportsDbClient? client, TheSportsDbMapper mapper = const TheSportsDbMapper()})
-    : _client = client ?? TheSportsDbClient(),
-      _mapper = mapper;
-
+final class TheSportsDbScoresDataSource implements ScoresRepository {
   final TheSportsDbClient _client;
-  final TheSportsDbMapper _mapper;
+
+  TheSportsDbScoresDataSource({required TheSportsDbClient client}) : _client = client;
 
   @override
   Stream<List<Match>> watchMatches(MatchDay day) => Stream.fromFuture(_fetchFeed(day));
@@ -30,12 +28,12 @@ class TheSportsDbScoresDataSource implements ScoresRepository {
       final events = (await _client.eventsDay(date, leagueId)).map(EventDto.fromJson).toList()
         ..sort((a, b) => '${a.timestamp}'.compareTo('${b.timestamp}'));
 
-      matches.addAll(events.map(_mapper.toMatch));
+      matches.addAll(events.map((event) => event.toEntity()));
     }
 
     developer.log(
       'feed: ${matches.length} matchs du $date (ligues ${TheSportsDbConfig.leagueIds})',
-      name: 'thesportsdb',
+      name: packageName,
     );
 
     return matches;
