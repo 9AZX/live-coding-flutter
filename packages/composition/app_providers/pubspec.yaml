@@ -15,6 +15,7 @@ dependencies:
     sdk: flutter
   flutter_riverpod: ^3.2.1
   live_presentation:
+  match_detail_presentation:
   matchs_data:
   matchs_presentation:
   network_dio_data:

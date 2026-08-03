@@ -8,6 +8,7 @@ environment:
 resolution: workspace
 
 dependencies:
+  match_detail_presentation:
   matchs_data:
   matchs_presentation:
   odds_data:

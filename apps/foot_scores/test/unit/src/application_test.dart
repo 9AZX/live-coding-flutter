@@ -12,32 +12,34 @@ import 'package:types_result_domain/types_result_domain.dart';
 
 scores_domain.Team _team(String id) => scores_domain.Team(colorValue: 0, id: id, name: 'Équipe $id', shortName: id);
 
+scores_domain.Match _match() => scores_domain.Match(
+  away: _team('b'),
+  awayScore: 0,
+  competition: const scores_domain.Competition(colorValue: 0, country: 'France', id: '4334', name: 'Ligue 1'),
+  home: _team('a'),
+  homeScore: 0,
+  id: 'm1',
+  kickoff: '20:45',
+  status: scores_domain.MatchStatus.upcoming,
+);
+
 /// Repository sans réseau : le test vérifie le câblage, pas l'API.
 final class _SingleMatchScoresRepository implements scores_domain.ScoresRepository {
   @override
+  Future<Result<scores_domain.Match, scores_domain.ScoresError>> fetchMatch(String id) async => Success(_match());
+
+  @override
   Future<Result<List<scores_domain.Match>, scores_domain.ScoresError>> fetchMatches(scores_domain.MatchDay day) async =>
-      Success([
-        scores_domain.Match(
-          away: _team('b'),
-          awayScore: 0,
-          competition: const scores_domain.Competition(
-            colorValue: 0,
-            country: 'France',
-            id: '4334',
-            name: 'Ligue 1',
-          ),
-          home: _team('a'),
-          homeScore: 0,
-          id: 'm1',
-          kickoff: '20:45',
-          status: scores_domain.MatchStatus.upcoming,
-        ),
-      ]);
+      Success([_match()]);
 }
 
 /// Le service de scores est indisponible : l'écran doit le dire, pas afficher
 /// « aucun match » ni le `toString()` de l'erreur.
 final class _UnavailableScoresRepository implements scores_domain.ScoresRepository {
+  @override
+  Future<Result<scores_domain.Match, scores_domain.ScoresError>> fetchMatch(String id) async =>
+      const Failure(scores_domain.ScoresError.unavailable());
+
   @override
   Future<Result<List<scores_domain.Match>, scores_domain.ScoresError>> fetchMatches(scores_domain.MatchDay day) async =>
       const Failure(scores_domain.ScoresError.unavailable());
@@ -99,6 +101,20 @@ void main() {
     expect(tester.takeException(), isNull);
     find.text('Scores indisponibles').evaluate().length.should.be(1);
     find.text('Aucun match').evaluate().length.should.be(0);
+  });
+
+  testWidgets('taper une rencontre ouvre son écran de détail', (tester) async {
+    await _pumpMarket(tester, frProviders());
+
+    await tester.tap(find.text('Équipe a'));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    // Le chemin complet est exercé : intention émise par la feature Matchs, traduite
+    // par le port côté composition, route AutoRoute, écran de la feature détail.
+    find.text('Ligue 1 · France').evaluate().length.should.be(1);
+    find.text('Résumé').evaluate().length.should.be(1);
+    find.text('Compo').evaluate().length.should.be(1);
   });
 }
 

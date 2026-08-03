@@ -8,6 +8,7 @@ environment:
 resolution: workspace
 
 dependencies:
+  match_detail_presentation:
   matchs_data:
   matchs_presentation:
   riverpod: ^3.2.1

@@ -3,6 +3,7 @@ import 'package:favorites_data/favorites_data.dart' as favorites_data;
 import 'package:favorites_presentation/favorites_presentation.dart' as favorites_presentation;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_presentation/live_presentation.dart' as live_presentation;
+import 'package:match_detail_presentation/match_detail_presentation.dart' as match_detail_presentation;
 import 'package:matchs_data/matchs_data.dart' as matchs_data;
 import 'package:matchs_presentation/matchs_presentation.dart';
 import 'package:matchs_presentation/matchs_presentation.dart' as matchs_presentation;
@@ -50,6 +51,9 @@ List<Override> appProviders({
   ...favorites_data.bindProviders(),
   ...matchs_presentation.bindProviders(
     routing: (ref) => AppMatchsRouting(router: ref.watch(appRouterProvider)),
+  ),
+  ...match_detail_presentation.bindProviders(
+    routing: (ref) => AppMatchDetailRouting(router: ref.watch(appRouterProvider)),
   ),
   ...live_presentation.bindProviders(
     emptyStateFactory: const EmptyStateWidgetFactory(),

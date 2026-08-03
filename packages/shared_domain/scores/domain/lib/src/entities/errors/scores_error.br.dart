@@ -6,8 +6,7 @@ part 'scores_error.br.freezed.dart';
 /// cas-là, jamais sur une exception réseau. Un cas par message affichable.
 @freezed
 sealed class ScoresError with _$ScoresError {
-  const factory ScoresError.unavailable() = UnavailableScoresError;
+  const factory ScoresError.notFound() = NotFoundScoresError;
 
-  // WORKSHOP : `ScoresError.notFound()` à ajouter pour l'écran détail — un match
-  // demandé qui n'existe pas n'est pas la même chose qu'un service indisponible.
+  const factory ScoresError.unavailable() = UnavailableScoresError;
 }

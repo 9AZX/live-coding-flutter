@@ -9,6 +9,47 @@ part of 'providers.br.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 
+@ProviderFor(fetchMatch)
+final fetchMatchProvider = FetchMatchProvider._();
+
+final class FetchMatchProvider
+    extends $FunctionalProvider<FetchMatch, FetchMatch, FetchMatch>
+    with $Provider<FetchMatch> {
+  FetchMatchProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'fetchMatchProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$fetchMatchHash();
+
+  @$internal
+  @override
+  $ProviderElement<FetchMatch> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  FetchMatch create(Ref ref) {
+    return fetchMatch(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(FetchMatch value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<FetchMatch>(value),
+    );
+  }
+}
+
+String _$fetchMatchHash() => r'5f7e11688b88e1e5b8792131acf78f06c0d7a81d';
+
 @ProviderFor(fetchMatches)
 final fetchMatchesProvider = FetchMatchesProvider._();
 
@@ -371,4 +412,86 @@ final class MatchGroupsFamily extends $Family
 
   @override
   String toString() => r'matchGroupsProvider';
+}
+
+/// Une rencontre et son détail. Même conversion que [matches] : l'échec du `Result`
+/// atterrit dans l'`AsyncValue`, l'écran détail lit un `AsyncError`.
+
+@ProviderFor(match)
+final matchProvider = MatchFamily._();
+
+/// Une rencontre et son détail. Même conversion que [matches] : l'échec du `Result`
+/// atterrit dans l'`AsyncValue`, l'écran détail lit un `AsyncError`.
+
+final class MatchProvider
+    extends $FunctionalProvider<AsyncValue<Match>, Match, FutureOr<Match>>
+    with $FutureModifier<Match>, $FutureProvider<Match> {
+  /// Une rencontre et son détail. Même conversion que [matches] : l'échec du `Result`
+  /// atterrit dans l'`AsyncValue`, l'écran détail lit un `AsyncError`.
+  MatchProvider._({
+    required MatchFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'matchProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$matchHash();
+
+  @override
+  String toString() {
+    return r'matchProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<Match> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<Match> create(Ref ref) {
+    final argument = this.argument as String;
+    return match(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is MatchProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$matchHash() => r'0f11b744a21e451a153ef57cbe53e4a20fd183c8';
+
+/// Une rencontre et son détail. Même conversion que [matches] : l'échec du `Result`
+/// atterrit dans l'`AsyncValue`, l'écran détail lit un `AsyncError`.
+
+final class MatchFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<Match>, String> {
+  MatchFamily._()
+    : super(
+        retry: null,
+        name: r'matchProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Une rencontre et son détail. Même conversion que [matches] : l'échec du `Result`
+  /// atterrit dans l'`AsyncValue`, l'écran détail lit un `AsyncError`.
+
+  MatchProvider call(String id) => MatchProvider._(argument: id, from: this);
+
+  @override
+  String toString() => r'matchProvider';
 }

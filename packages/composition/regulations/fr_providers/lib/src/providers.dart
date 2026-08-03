@@ -1,4 +1,5 @@
 import 'package:fr_providers/src/fr_league_catalog.dart';
+import 'package:match_detail_presentation/match_detail_presentation.dart' as match_detail_presentation;
 import 'package:matchs_data/matchs_data.dart' as matchs_data;
 import 'package:matchs_presentation/matchs_presentation.dart' as matchs_presentation;
 import 'package:odds_data/odds_data.dart' as odds_data;
@@ -19,6 +20,5 @@ List<Override> frProviders() => [
   ...odds_data.bindProviders(),
   ...odds_presentation.bindProviders(),
   ...matchs_presentation.bindRegulationProviders(oddsFactory: const OddsBadgeWidgetFactory()),
-  // WORKSHOP : exposer aussi les cotes sur l'écran détail (étape 7) —
-  // ...match_detail_presentation.bindRegulationProviders(oddsFactory: const OddsBadgeWidgetFactory()),
+  ...match_detail_presentation.bindRegulationProviders(oddsFactory: const OddsBadgeWidgetFactory()),
 ];

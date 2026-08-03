@@ -55,10 +55,11 @@ extension ScoresErrorPatterns on ScoresError {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( UnavailableScoresError value)?  unavailable,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( NotFoundScoresError value)?  notFound,TResult Function( UnavailableScoresError value)?  unavailable,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
-case UnavailableScoresError() when unavailable != null:
+case NotFoundScoresError() when notFound != null:
+return notFound(_that);case UnavailableScoresError() when unavailable != null:
 return unavailable(_that);case _:
   return orElse();
 
@@ -77,10 +78,11 @@ return unavailable(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( UnavailableScoresError value)  unavailable,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( NotFoundScoresError value)  notFound,required TResult Function( UnavailableScoresError value)  unavailable,}){
 final _that = this;
 switch (_that) {
-case UnavailableScoresError():
+case NotFoundScoresError():
+return notFound(_that);case UnavailableScoresError():
 return unavailable(_that);}
 }
 /// A variant of `map` that fallback to returning `null`.
@@ -95,10 +97,11 @@ return unavailable(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( UnavailableScoresError value)?  unavailable,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( NotFoundScoresError value)?  notFound,TResult? Function( UnavailableScoresError value)?  unavailable,}){
 final _that = this;
 switch (_that) {
-case UnavailableScoresError() when unavailable != null:
+case NotFoundScoresError() when notFound != null:
+return notFound(_that);case UnavailableScoresError() when unavailable != null:
 return unavailable(_that);case _:
   return null;
 
@@ -116,9 +119,10 @@ return unavailable(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  unavailable,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  notFound,TResult Function()?  unavailable,required TResult orElse(),}) {final _that = this;
 switch (_that) {
-case UnavailableScoresError() when unavailable != null:
+case NotFoundScoresError() when notFound != null:
+return notFound();case UnavailableScoresError() when unavailable != null:
 return unavailable();case _:
   return orElse();
 
@@ -137,9 +141,10 @@ return unavailable();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  unavailable,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  notFound,required TResult Function()  unavailable,}) {final _that = this;
 switch (_that) {
-case UnavailableScoresError():
+case NotFoundScoresError():
+return notFound();case UnavailableScoresError():
 return unavailable();}
 }
 /// A variant of `when` that fallback to returning `null`
@@ -154,9 +159,10 @@ return unavailable();}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  unavailable,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  notFound,TResult? Function()?  unavailable,}) {final _that = this;
 switch (_that) {
-case UnavailableScoresError() when unavailable != null:
+case NotFoundScoresError() when notFound != null:
+return notFound();case UnavailableScoresError() when unavailable != null:
 return unavailable();case _:
   return null;
 
@@ -164,6 +170,38 @@ return unavailable();case _:
 }
 
 }
+
+/// @nodoc
+
+
+class NotFoundScoresError implements ScoresError {
+  const NotFoundScoresError();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is NotFoundScoresError);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'ScoresError.notFound()';
+}
+
+
+}
+
+
+
 
 /// @nodoc
 

@@ -1,3 +1,4 @@
+import 'package:match_detail_presentation/match_detail_presentation.dart' as match_detail_presentation;
 import 'package:matchs_data/matchs_data.dart' as matchs_data;
 import 'package:matchs_presentation/matchs_presentation.dart' as matchs_presentation;
 import 'package:pl_providers/src/pl_league_catalog.dart';
@@ -15,6 +16,5 @@ List<Override> plProviders() => [
     leagueIds: PlLeagueCatalog.leagueIds,
   ),
   ...matchs_presentation.bindRegulationProviders(oddsFactory: null),
-  // WORKSHOP : répondre aussi pour l'écran détail (étape 7) — `null`, pas de cotes ici.
-  // ...match_detail_presentation.bindRegulationProviders(oddsFactory: null),
+  ...match_detail_presentation.bindRegulationProviders(oddsFactory: null),
 ];

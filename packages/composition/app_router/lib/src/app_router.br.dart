@@ -2,6 +2,7 @@ import 'package:app_router/src/shell/scores_shell_page.br.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:favorites_presentation/favorites_presentation.dart';
 import 'package:live_presentation/live_presentation.dart';
+import 'package:match_detail_presentation/match_detail_presentation.dart';
 import 'package:matchs_presentation/matchs_presentation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -35,6 +36,6 @@ class AppRouter extends RootStackRouter {
         AutoRoute(page: FavoritesRoute.page, path: FavoritesRoutePath.favorites.path),
       ],
     ),
-    // WORKSHOP : ajouter ici la route du détail, une fois la feature match_detail créée.
+    AutoRoute(page: MatchDetailRoute.page, path: MatchDetailRoutePath.matchDetail.path),
   ];
 }

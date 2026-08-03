@@ -1,3 +1,4 @@
+export 'src/behaviors/fetch_match.dart';
 export 'src/behaviors/fetch_matches.dart';
 export 'src/behaviors/group_matches.dart';
 export 'src/behaviors/toggle_favorite_match.dart';

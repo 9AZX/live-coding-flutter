@@ -1,4 +1,5 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:scores_domain/src/behaviors/fetch_match.dart';
 import 'package:scores_domain/src/behaviors/fetch_matches.dart';
 import 'package:scores_domain/src/behaviors/group_matches.dart';
 import 'package:scores_domain/src/behaviors/toggle_favorite_match.dart';
@@ -23,6 +24,9 @@ List<Override> bindProviders({
   if (scoresRepository case final scoresRepository?)
     scoresRepositoryProvider.overrideWith((ref) => ref.watch(scoresRepository)),
 ];
+
+@riverpod
+FetchMatch fetchMatch(Ref ref) => FetchMatch(repository: ref.watch(scoresRepositoryProvider));
 
 @riverpod
 FetchMatches fetchMatches(Ref ref) => FetchMatches(repository: ref.watch(scoresRepositoryProvider));
@@ -53,5 +57,7 @@ AsyncValue<List<MatchGroup>> matchGroups(Ref ref, MatchFilter filter, MatchDay d
   return ref.watch(matchesProvider(day)).whenData((matches) => group(matches, filter));
 }
 
-// WORKSHOP : behavior `FetchMatch` + provider `match(id)` (écran détail) à
-// reconstruire ici, sur le modèle de `fetchMatches` / `matches`.
+/// Une rencontre et son détail. Même conversion que [matches] : l'échec du `Result`
+/// atterrit dans l'`AsyncValue`, l'écran détail lit un `AsyncError`.
+@riverpod
+Future<Match> match(Ref ref, String id) async => (await ref.watch(fetchMatchProvider).execute(id)).getOrThrow();
