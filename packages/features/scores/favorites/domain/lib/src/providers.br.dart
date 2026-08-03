@@ -9,7 +9,7 @@ part 'providers.br.g.dart';
 List<Match> favoriteMatches(Ref ref) {
   final ids = ref.watch(favoriteMatchIdsProvider).value ?? const <String>{};
   // Favoris résolus sur les matchs du jour (limite assumée : pas de cross-jour).
-  final matches = ref.watch(watchMatchesProvider(MatchDay.today)).value ?? const <Match>[];
+  final matches = ref.watch(matchesProvider(MatchDay.today)).value ?? const <Match>[];
 
   return [
     for (final match in matches)

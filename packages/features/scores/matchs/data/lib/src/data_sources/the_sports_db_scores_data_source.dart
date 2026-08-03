@@ -1,67 +1,91 @@
 import 'dart:developer' as developer;
 
-import 'package:matchs_data/src/api/the_sports_db_client.dart';
-import 'package:matchs_data/src/dtos/event_dto.br.dart';
+import 'package:matchs_data/src/dtos/events_response_dto.br.dart';
 import 'package:matchs_data/src/mappers/event_dto_mapper.dart';
 import 'package:matchs_data/src/package_name.dart';
+import 'package:network_domain/network_domain.dart';
 import 'package:scores_domain/scores_domain.dart';
+import 'package:types_result_domain/types_result_domain.dart';
 
 /// Source de données réelle TheSportsDB. Implémente directement le contrat du
 /// domaine : une seule source, donc pas de classe repository intermédiaire.
 ///
 /// Le catalogue de ligues est injecté : la source ne décide pas du marché.
 ///
-/// WORKSHOP : `watchMatch(id)` (détail) à reconstruire — récupérer l'event, sa
-/// timeline et ses compositions, puis mapper vers un `Match` enrichi.
+/// WORKSHOP : `fetchMatch(id)` (détail) à reconstruire — trois appels en parallèle
+/// (`/lookupevent.php`, `/lookuptimeline.php`, `/lookuplineup.php`), puis mapper vers
+/// un `Match` enrichi. Même forme que `_leagueMatches` : `Failure`, jamais d'exception.
 final class TheSportsDbScoresDataSource implements ScoresRepository {
-  final TheSportsDbClient _client;
-  final Map<int, String> _countryByLeague;
-  final List<int> _leagueIds;
+  final DateTime Function() _clock;
+  final HttpClient _client;
+  final Map<String, String> _countryByLeague;
+  final List<String> _leagueIds;
 
-  TheSportsDbScoresDataSource({
-    required TheSportsDbClient client,
-    required Map<int, String> countryByLeague,
-    required List<int> leagueIds,
-  }) : _client = client,
+  const TheSportsDbScoresDataSource({
+    required DateTime Function() clock,
+    required HttpClient client,
+    required Map<String, String> countryByLeague,
+    required List<String> leagueIds,
+  }) : _clock = clock,
+       _client = client,
        _countryByLeague = countryByLeague,
        _leagueIds = leagueIds;
 
-  @override
-  Stream<List<Match>> watchMatches(MatchDay day) => Stream.fromFuture(_fetchFeed(day));
+  static const String _eventsDayPath = '/eventsday.php';
 
-  Future<List<Match>> _fetchFeed(MatchDay day) async {
+  @override
+  Future<Result<List<Match>, ScoresError>> fetchMatches(MatchDay day) async {
     final date = _dateFor(day);
 
     // Un appel par ligue, lancés en parallèle : `Future.wait` restitue les résultats
     // dans l'ordre de `_leagueIds`, donc l'ordre des cartes de compétition reste stable.
-    final perLeague = await Future.wait(_leagueIds.map((leagueId) => _fetchLeague(date, leagueId)));
+    final perLeague = await Future.wait(_leagueIds.map((leagueId) => _leagueMatches(date, leagueId)));
 
-    final matches = perLeague.expand((leagueMatches) => leagueMatches).toList();
+    // Une ligue en échec (réseau, quota de la clé de test) ne doit pas vider le feed ;
+    // toutes en échec, si — sinon l'écran affiche « aucun match » pour une panne.
+    if (perLeague.isNotEmpty && perLeague.every((result) => result.isError())) {
+      return const Failure(ScoresError.unavailable());
+    }
 
-    developer.log('feed: ${matches.length} matchs du $date', name: packageName);
-
-    return matches;
+    return Success(perLeague.expand((result) => result.getOrDefault(const [])).toList());
   }
 
-  /// Une ligue qui échoue (réseau, quota de la clé de test) ne doit pas vider tout
-  /// le feed : on la journalise et on rend les autres.
-  Future<List<Match>> _fetchLeague(String date, int leagueId) async {
+  Future<Result<List<Match>, ScoresError>> _leagueMatches(String date, String leagueId) async {
     try {
-      final events = (await _client.eventsDay(date, leagueId)).map(EventDto.fromJson).toList()
-        ..sort((a, b) => '${a.timestamp}'.compareTo('${b.timestamp}'));
+      final response = await _client.get<Map<String, dynamic>>(
+        _eventsDayPath,
+        queryParameters: {'d': date, 'l': leagueId},
+      );
 
-      return events.map((event) => event.toEntity(country: _countryByLeague[leagueId] ?? '')).toList();
-    } on Exception catch (e, s) {
-      developer.log('ligue $leagueId ignorée pour le $date', name: packageName, error: e, stackTrace: s);
+      if (response.data case final data?) {
+        final events = EventsResponseDto.fromJson(data).events ?? const [];
+        final country = _countryByLeague[leagueId] ?? '';
 
-      return const [];
+        return Success([for (final event in events) event.toEntity(country: country)]..sort(_byKickoff));
+      }
+
+      return const Failure(ScoresError.unavailable());
+    } catch (exception, stackTrace) {
+      // Un NetworkError est déjà journalisé par la couche réseau ; le reste (JSON
+      // inattendu, bug de mapping) est un défaut à voir passer dans les logs.
+      if (exception is! NetworkError) {
+        developer.log(
+          'Échec inattendu du feed de la ligue $leagueId',
+          name: packageName,
+          error: exception,
+          stackTrace: stackTrace,
+        );
+      }
+
+      return const Failure(ScoresError.unavailable());
     }
   }
 
-  // ponytail: date via l'horloge appareil (en prod : source NTP type Kronos).
   String _dateFor(MatchDay day) {
-    final date = DateTime.now().add(Duration(days: day.offset));
+    final date = _clock().add(Duration(days: day.offset));
 
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
   }
 }
+
+int _byKickoff(Match a, Match b) => a.kickoff.compareTo(b.kickoff);

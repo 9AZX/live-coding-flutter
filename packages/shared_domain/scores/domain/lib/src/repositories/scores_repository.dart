@@ -1,10 +1,12 @@
+import 'package:scores_domain/src/entities/errors/scores_error.br.dart';
 import 'package:scores_domain/src/entities/match.br.dart';
 import 'package:scores_domain/src/entities/match_day.dart';
+import 'package:types_result_domain/types_result_domain.dart';
 
 // ignore: one_member_abstracts
 abstract interface class ScoresRepository {
-  /// Flux des matchs du jour demandé ; émet à nouveau quand un score change.
-  Stream<List<Match>> watchMatches(MatchDay day);
+  /// Matchs du jour demandé. Un échec est une valeur de retour, pas une exception.
+  Future<Result<List<Match>, ScoresError>> fetchMatches(MatchDay day);
 
-  // WORKSHOP : `Stream<Match?> watchMatch(String id)` (détail) à reconstruire ici.
+  // WORKSHOP : `fetchMatch(String id)` (détail) à reconstruire ici.
 }

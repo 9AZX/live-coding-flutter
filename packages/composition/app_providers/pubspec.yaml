@@ -17,6 +17,7 @@ dependencies:
   live_presentation:
   matchs_data:
   matchs_presentation:
+  network_dio_data:
   riverpod_annotation: ^4.0.2
   scores_domain:
   tactics_components:

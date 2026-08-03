@@ -45,13 +45,20 @@ packages/
   utilities/
     exceptions/                   # UnregisteredProviderException
     givn/                         # DSL de test given(...).when(...).then(...)
+    network/shared/domain/        # contrats réseau : HttpClient, NetworkResponse, NetworkError (pkg network_domain)
+    network/dio/data/             # implémentation Dio des contrats (pkg network_dio_data) — seul package qui connaît Dio
+    types/result/domain/          # Result<T, E> (result_dart) : un appel réussit ou échoue, il ne throw pas
     widget_factory/presentation/  # WidgetFactory<T> : exposer un widget à un host sans couplage
 bricks/                           # templates Mason (domain, data, presentation)
 ```
 
-**Ces trois packages sont vendorés depuis `flutter-front` — signaler un problème
+**Ces quatre packages sont vendorés depuis `flutter-front` — signaler un problème
 plutôt que les modifier** : `utilities/exceptions`, `utilities/givn`,
-`utilities/widget_factory`.
+`utilities/types/result`, `utilities/widget_factory`.
+
+`utilities/network/*` reprend la forme de prod (mêmes noms de packages, de types et de
+providers) mais **réduite** à ce que l'exercice utilise : `get<T>` seulement, pas
+d'interceptors, pas d'auth, pas de gRPC/WebSocket/SSE.
 
 ---
 
@@ -119,7 +126,8 @@ Puis la checklist de câblage (§ *Wiring a new feature*).
 
 - **Ne jamais utiliser `DateTime.now()` / `DateTime.timestamp()` directement** dans de
   la logique testable — injecter une source de temps via un provider (en prod :
-  utilitaire NTP `Kronos`).
+  utilitaire NTP `Kronos`). Ici : `clockProvider` (`DateTime Function()`), injecté dans
+  la source de données ; les tests le figent.
 
 ### Import Policy
 
@@ -129,6 +137,7 @@ Puis la checklist de câblage (§ *Wiring a new feature*).
 | Interne (même package) | Imports `package:<self>/src/...` (comme en prod) |
 | Isolation des features | NE JAMAIS importer `packages/features/X` dans `packages/features/Y` |
 | Clean Architecture | La couche Presentation ne doit pas importer de fichiers de la couche Data |
+| Lib HTTP | `dio` ne doit apparaître que dans `utilities/network/dio/data` — ailleurs, `HttpClient` |
 
 ---
 
@@ -144,8 +153,9 @@ feature/
 │   ├── mappers/          # extension <Dto>Mapper on <Dto> { Entity toEntity() }
 │   ├── providers_di.br.dart / providers_internal.br.dart / providers.br.dart / providers.dart
 ├── domain/lib/src/
-│   ├── behaviors/        # logique métier, classes nommées par un verbe (GroupMatches, ToggleFavoriteMatch)
+│   ├── behaviors/        # logique métier, classes nommées par un verbe (FetchMatches, ToggleFavoriteMatch)
 │   ├── entities/         # *.br.dart (freezed)
+│   ├── entities/errors/  # unions scellées d'échecs métier (*.br.dart) — le `E` des Result
 │   ├── repositories/     # contrats abstraits
 │   ├── providers_di.br.dart / providers_internal.br.dart / providers.br.dart
 └── presentation/lib/src/
@@ -183,10 +193,37 @@ La composition n'appelle que `bindProviders(...)` ; elle n'override jamais un sy
 `providers_di` directement.
 
 **La présentation ne lit jamais un contrat de repository.** Elle lit des providers d'état
-(`watchMatchGroupsProvider`, `favoriteMatchIdsProvider`) et appelle des **behaviors**
+(`matchGroupsProvider`, `favoriteMatchIdsProvider`) et appelle des **behaviors**
 exposés comme providers (`toggleFavoriteMatchProvider`). Pour toute nouvelle action
 transverse : ajouter une petite classe dans `src/behaviors/` du domaine et l'exposer
 depuis `providers.br.dart`, plutôt que d'exporter le repository brut.
+
+### Réseau et gestion d'erreur : `Result`, pas d'exception
+
+Un appel qui peut échouer retourne un **`Result<T, E>`** (`types_result_domain`, basé sur
+`result_dart`) : l'échec est une valeur de retour visible dans la signature, pas une
+exception à attraper au bon endroit. Les exceptions restent réservées aux **erreurs de
+programmation** (`UnregisteredProviderException`).
+
+Trois traductions successives, pour qu'aucune feature ne dépende de la lib HTTP :
+
+| Couche | Type | Qui le produit |
+|--------|------|----------------|
+| lib HTTP | `DioException` | Dio |
+| contrat réseau | `NetworkError` (union scellée) | `mapDioException`, dans `network_dio_data` |
+| domaine métier | `ScoresError` (union scellée freezed) | la source de données, qui rend un `Failure` |
+
+- Une **source de données** prend un `HttpClient` injecté (jamais un `Dio`, jamais une
+  classe « client API » maison), déclare ses chemins en `static const String _xxxPath`,
+  et modélise l'enveloppe de la réponse en **DTO** plutôt que de piocher une clé JSON à
+  la main — une API qui change de forme doit échouer au parsing, pas rendre une liste vide.
+- Elle attrape tout, ne journalise que l'**inattendu** (`if (exception is! NetworkError)`,
+  les échecs réseau étant déjà tracés par la couche réseau) et retourne un `Failure`.
+- Côté état, un provider Riverpod convertit avec `getOrThrow()` : l'échec atterrit dans
+  l'`AsyncValue`, et la présentation traduit l'`error:` en **copie utilisateur** de son
+  `l10n` — jamais `Text('$error')`.
+- La `baseUrl` arrive par injection (`bindProviders(baseUrlProvider: …)`), jamais depuis
+  une classe de config statique dans la feature.
 
 ### Routing Architecture
 
@@ -310,6 +347,21 @@ Les tests vivent dans `test/unit/src/` en miroir de `lib/src/`, utilisent les as
 **shouldly** (`.should.be(...)`, `.should.beTrue()`) et le DSL **givn**
 `given(...).when(...).then(...)`.
 
+### Mocks
+
+Les mocks sont générés par **mockito**, déclarés dans un unique
+`test/unit/src/<package_name>_mocks.dart` :
+
+```dart
+@GenerateMocks([HttpClient])
+void main() {}
+```
+
+`build_runner` produit `<package_name>_mocks.mocks.dart`, que les tests importent. Dans un
+`given`, les instances passent par `mocks: [MockHttpClient()]` et se relisent via
+`context.mockOf<MockHttpClient>()` (utilisable aussi dans le `then`, pour un `verify`).
+**Aucun test unitaire ne touche le réseau** : c'est le `HttpClient` qu'on mocke, jamais Dio.
+
 ### Structure Given / When / Then
 
 | Phase | Sens |
@@ -337,6 +389,9 @@ humain : elles se lisent comme une spec, pas comme du code.
 
 - **Tester** : behaviors, repositories / data sources, mappers, state holders
   (providers/notifiers), fonctions avec vraie logique
+- Pour une source de données, couvrir au minimum : le cas nominal, la réponse vide, la
+  réponse d'une forme inattendue, et l'échec réseau — chacun doit produire le bon
+  `Success` / `Failure`
 - **Souvent ignorer** : constructeurs triviaux, DTOs sans logique, helpers privés isolés,
   comportement du framework, sérialisation générée
 - **Asserter sur le comportement** : règles métier, branchements, effets de bord, gestion
@@ -387,7 +442,11 @@ fix(ui): resolve favorite star alignment on iPhone SE
 - Reporter les exceptions attrapées via les providers APM/Crashlytics
 - Ne jamais implémenter de tracking brut dans les features
 - Les exceptions sont réservées aux **erreurs de programmation**
-  (`UnregisteredProviderException` = contrat DI jamais fourni)
+  (`UnregisteredProviderException` = contrat DI jamais fourni). Un échec attendu
+  (réseau, backend, ressource absente) se retourne en `Failure` d'un `Result` —
+  voir *Réseau et gestion d'erreur*.
+- Ne journaliser un échec **qu'une fois**, dans la couche qui le produit : la couche
+  réseau trace ses propres erreurs, une source de données ne re-log pas un `NetworkError`
 
 ---
 

@@ -41,6 +41,10 @@ composition/
   app_router                  →  AppRouter (AutoRoute) + impls des ports de routing
   regulations/fr_providers    →  ce que le marché FR expose
   regulations/pl_providers    →  ce que le marché PL expose
+utilities/
+  network/shared/domain       →  le contrat HttpClient (+ NetworkError) : personne ne connaît Dio
+  network/dio/data            →  l'implémentation Dio, branchée par la composition
+  types/result/domain         →  Result<T, E> : un appel réussit ou échoue, il ne "throw" pas
 ```
 
 **Règle d'or** : une feature **n'importe jamais** une autre feature. Ce qui est
@@ -86,16 +90,40 @@ cd apps/foot_scores && flutter run --dart-define=REGULATION=pl
 **Fichier** `lib/src/repositories/scores_repository.dart`
 Ajoute une méthode à l'interface (remplace le `// WORKSHOP`) :
 ```dart
-Stream<Match?> watchMatch(String id);
+Future<Result<Match, ScoresError>> fetchMatch(String id);
 ```
 
+> 🔑 **`Result<T, E>`, pas d'exception.** Un appel réussit (`Success`) ou échoue
+> (`Failure`) : l'échec est une **valeur de retour**, visible dans la signature, que
+> le compilateur t'oblige à traiter. Les exceptions restent réservées aux **bugs**
+> (`UnregisteredProviderException`). Regarde `fetchMatches` juste au-dessus.
+
+**Fichier** `lib/src/entities/errors/scores_error.br.dart`
+Le match demandé peut ne pas exister : ajoute un cas à l'union scellée.
+```dart
+@freezed
+sealed class ScoresError with _$ScoresError {
+  const factory ScoresError.notFound() = NotFoundScoresError;
+  const factory ScoresError.unavailable() = UnavailableScoresError;
+}
+```
+
+**Fichier** `lib/src/behaviors/fetch_match.dart`
+La présentation n'appelle **jamais** un repository : elle appelle un *behavior*.
+Copie la forme de `fetch_matches.dart` (une classe, un `execute`).
+
 **Fichier** `lib/src/providers.br.dart`
-Expose le provider (juste sous `watchMatchGroups`, où se trouve le `// WORKSHOP`) :
+Expose le behavior et le provider d'état (là où se trouve le `// WORKSHOP`) :
 ```dart
 @riverpod
-Stream<Match?> watchMatch(Ref ref, String id) =>
-    ref.watch(scoresRepositoryProvider).watchMatch(id);
+FetchMatch fetchMatch(Ref ref) => FetchMatch(repository: ref.watch(scoresRepositoryProvider));
+
+@riverpod
+Future<Match> match(Ref ref, String id) async =>
+    (await ref.watch(fetchMatchProvider).execute(id)).getOrThrow();
 ```
+> `getOrThrow()` reporte l'échec du `Result` dans l'`AsyncValue` du provider : ton
+> écran lira un `AsyncError` sans jamais manipuler de `Result`.
 
 > Les entités `MatchEvent`, `Lineup`, `Player` et les champs `Match.events` /
 > `Match.lineups` **existent déjà**. Rien à créer côté entités. 🎁
@@ -113,16 +141,20 @@ respecte plus le contrat. **C'est normal** — on la corrige à l'étape 2.
 
 **Objectif** : aller chercher les vraies données sur l'API et les transformer.
 
-### 2.1 — Les appels API
-**Fichier** `lib/src/api/the_sports_db_client.dart` (le helper `_list` existe déjà) :
+### 2.1 — Les trois endpoints
+Il n'y a **pas** de classe « client API » à remplir : la source de données reçoit un
+`HttpClient` injecté (contrat de `network_domain`) et déclare ses chemins elle-même.
+Dans `the_sports_db_scores_data_source.dart`, à côté de `_eventsDayPath` :
+
 ```dart
-Future<List<Map<String, dynamic>>> timeline(String eventId) =>
-    _list('/lookuptimeline.php', {'id': eventId}, key: 'timeline');
-Future<List<Map<String, dynamic>>> lineup(String eventId) =>
-    _list('/lookuplineup.php', {'id': eventId}, key: 'lineup');
-Future<Map<String, dynamic>?> event(String eventId) async =>
-    (await _list('/lookupevent.php', {'id': eventId}, key: 'events')).firstOrNull;
+static const String _lineupPath = '/lookuplineup.php';
+static const String _lookupEventPath = '/lookupevent.php';
+static const String _timelinePath = '/lookuptimeline.php';
 ```
+
+> 💡 La source ne connaît ni Dio, ni l'URL du backend : `HttpClient` est un contrat,
+> l'implémentation Dio est branchée par la composition (`network_dio_data`), et la
+> `baseUrl` arrive par injection. Changer de lib HTTP ne toucherait aucune feature.
 
 ### 2.2 — 🟢 EXERCICE : ton premier DTO
 Un **DTO** = une classe typée qui représente le JSON de l'API (au lieu de
@@ -169,6 +201,23 @@ abstract class TimelineEntryDto with _$TimelineEntryDto {
 > 🏅 **Bonus** : fais pareil pour `LineupEntryDto` (`strHome`, `strSubstitute`,
 > `strPlayer`, `intSquadNumber`).
 
+Il te faut aussi l'**enveloppe** de chaque réponse — l'API emballe toujours sa liste
+sous une clé. Regarde `events_response_dto.br.dart`, puis crée la même chose pour la
+timeline (clé `timeline`) et les compos (clé `lineup`) :
+```dart
+@freezed
+abstract class TimelineResponseDto with _$TimelineResponseDto {
+  const factory TimelineResponseDto({@JsonKey(name: 'timeline') List<TimelineEntryDto>? timeline}) =
+      _TimelineResponseDto;
+
+  factory TimelineResponseDto.fromJson(Map<String, dynamic> json) => _$TimelineResponseDtoFromJson(json);
+}
+```
+> Pourquoi ne pas juste lire `json['timeline']` ? Parce qu'une API qui change de forme
+> doit **échouer au parsing**, pas rendre une liste vide qu'on prendrait pour « aucun
+> évènement ». `/lookupevent.php` renvoie la clé `events` : `EventsResponseDto` est
+> réutilisable telle quelle. 🎁
+
 ### 2.3 — Le mapper (DTO → entité du domaine)
 **Fichier** `lib/src/mappers/event_dto_mapper.dart` : les mappers sont des
 **extensions** sur le DTO. Regarde la signature existante :
@@ -186,21 +235,41 @@ Ajoute sur le même modèle `toEvents` / `toLineups` pour tes nouveaux DTOs (un 
 `strTimeline == 'Goal'`, équipe à domicile = `strHome == 'Yes'`).
 
 ### 2.4 — Implémenter le contrat
-**Fichier** `lib/src/data_sources/the_sports_db_scores_data_source.dart` :
+**Fichier** `lib/src/data_sources/the_sports_db_scores_data_source.dart`.
+Copie la forme de `_leagueMatches` : un `try`, un `if (response.data case final data?)`,
+et un `Failure` sur chaque sortie qui n'a pas de données.
+
 ```dart
 @override
-Stream<Match?> watchMatch(String id) => Stream.fromFuture(_fetchDetail(id));
-// _fetchDetail : event + timeline + lineup
-//   → dto.toEntity(country: _countryByLeague[leagueId] ?? '', events: …, lineups: …)
+Future<Result<Match, ScoresError>> fetchMatch(String id) async {
+  // 3 appels : _lookupEventPath, _timelinePath, _lineupPath (queryParameters: {'id': id})
+  //   → l'event absent  ⇒ Failure(ScoresError.notFound())
+  //   → un échec réseau ⇒ Failure(ScoresError.unavailable())
+  //   → sinon dto.toEntity(country: _countryByLeague[leagueId] ?? '', events: …, lineups: …)
+}
 ```
+
+> 💡 Les trois appels sont indépendants : `Future.wait` les lance en parallèle plutôt
+> qu'en file — le détail s'ouvre en un aller-retour, pas trois.
 
 > 💡 `_countryByLeague` et `_leagueIds` sont des champs **injectés** dans le
 > constructeur : la source ne connaît pas les compétitions du marché. Regarde
-> `providers_internal.br.dart` pour voir d'où ils viennent.
+> `providers_internal.br.dart` pour voir d'où ils viennent — même chose pour `clock`,
+> qui évite un `DateTime.now()` en dur (intestable).
+
+### 2.5 — 🟢 EXERCICE : le test de la source
+Un test par **comportement observable**, pas par méthode. Copie
+`the_sports_db_scores_data_source_test.dart` : le `HttpClient` y est un **mock**
+(`@GenerateMocks` dans `matchs_data_mocks.dart`) donc aucun test ne touche le réseau.
+
+Écris au moins ces trois-là :
+- le détail d'un match affiche ses buts et ses compositions ;
+- un match inconnu remonte `ScoresError.notFound()` ;
+- un service injoignable remonte `ScoresError.unavailable()`.
 
 **✅ Vérifie**
 ```bash
-cd packages/features/scores/matchs/data && dart run build_runner build
+cd packages/features/scores/matchs/data && dart run build_runner build && flutter test
 mise run analyze   # l'erreur de l'étape 1 doit disparaître ✅
 ```
 
@@ -282,11 +351,11 @@ mise run analyze
 2. `lib/src/widgets/lineup_section.dart` — une composition (équipe + onze).
 3. `lib/src/match_detail_screen.dart` — `ConsumerWidget` qui prend le `matchId` :
    ```dart
-   final match = ref.watch(watchMatchProvider(matchId));
+   final match = ref.watch(matchProvider(matchId));
    return match.when(
      loading: ...,           // un loader
-     error: ...,             // un message
-     data: (m) => ...,       // en-tête + onglets Résumé (m!.events) / Compo (m.lineups)
+     error: ...,             // une copie utilisateur de ton l10n, jamais '$error'
+     data: (m) => ...,       // en-tête + onglets Résumé (m.events) / Compo (m.lineups)
    );
    ```
 4. Dans `lib/src/routing/match_detail_router.br.dart`, passe le `matchId` en
@@ -450,7 +519,12 @@ Tape un match → l'écran Détail s'ouvre. **Bravo !** 🥳
    Deux formes : une **valeur** injectée (le catalogue de ligues) ou une **feature
    entière** injectée (`WidgetFactory<T>?`, `null` = absente).
 4. **Un DTO** isole le JSON de l'API du reste du code : si l'API change, tu ne
-   corriges qu'un seul endroit.
+   corriges qu'un seul endroit. Modélise aussi l'**enveloppe** de la réponse : une
+   forme inattendue doit échouer, pas se faire passer pour un résultat vide.
+5. **Un échec est une valeur, pas une exception.** `Result<T, E>` met l'erreur dans la
+   signature ; les couches basses traduisent (`DioException` → `NetworkError` →
+   `ScoresError`) pour qu'aucune feature ne dépende de la lib HTTP. Les exceptions sont
+   réservées aux erreurs de programmation.
 5. **`build_runner`** régénère le code annoté (`@riverpod`, `@freezed`,
    `@TailorMixinComponent`, `@RoutePage`) — relance-le à chaque fois que `analyze`
    parle de `_$...`, `.g.dart`, `.freezed.dart`, `.tailor.dart` ou `.gr.dart`.
@@ -468,7 +542,8 @@ Tape un match → l'écran Détail s'ouvre. **Bravo !** 🥳
   en `.br.dart`, sinon les générateurs l'ignorent).
 - **`UnregisteredProviderException`** → un contrat DI n'a pas été fourni : ajoute
   l'appel `bindProviders(...)` correspondant dans `app_providers`.
-- **L'écran est vide / une erreur réseau** → regarde la console, les logs
-  `[matchs_data]` montrent chaque appel API et son résultat.
+- **L'écran est vide / une erreur réseau** → regarde la console : `[network_dio_data]`
+  trace les appels HTTP en échec, `[matchs_data]` les réponses inattendues (JSON d'une
+  forme imprévue, bug de mapping).
 - **Perdu ?** → `grep -rn "WORKSHOP" packages` pour retrouver tous les points à
   compléter.

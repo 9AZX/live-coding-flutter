@@ -55,4 +55,4 @@ final class FavoriteMatchesProvider
   }
 }
 
-String _$favoriteMatchesHash() => r'1cfc269203a754a53f2744afcb6b55d5367500e5';
+String _$favoriteMatchesHash() => r'7f3ec9365801bf8ac7783ff6a246dfaac3c2c35c';

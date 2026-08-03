@@ -8,53 +8,60 @@ part of 'providers_internal.br.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// Source de temps injectée : les tests figent la date, la source ne connaît pas
+/// l'horloge de l'appareil (en prod : utilitaire NTP type Kronos).
 
-@ProviderFor(theSportsDbClient)
-final theSportsDbClientProvider = TheSportsDbClientProvider._();
+@ProviderFor(clock)
+final clockProvider = ClockProvider._();
 
-final class TheSportsDbClientProvider
+/// Source de temps injectée : les tests figent la date, la source ne connaît pas
+/// l'horloge de l'appareil (en prod : utilitaire NTP type Kronos).
+
+final class ClockProvider
     extends
         $FunctionalProvider<
-          TheSportsDbClient,
-          TheSportsDbClient,
-          TheSportsDbClient
+          DateTime Function(),
+          DateTime Function(),
+          DateTime Function()
         >
-    with $Provider<TheSportsDbClient> {
-  TheSportsDbClientProvider._()
+    with $Provider<DateTime Function()> {
+  /// Source de temps injectée : les tests figent la date, la source ne connaît pas
+  /// l'horloge de l'appareil (en prod : utilitaire NTP type Kronos).
+  ClockProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
-        name: r'theSportsDbClientProvider',
+        name: r'clockProvider',
         isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
 
   @override
-  String debugGetCreateSourceHash() => _$theSportsDbClientHash();
+  String debugGetCreateSourceHash() => _$clockHash();
 
   @$internal
   @override
-  $ProviderElement<TheSportsDbClient> $createElement(
+  $ProviderElement<DateTime Function()> $createElement(
     $ProviderPointer pointer,
   ) => $ProviderElement(pointer);
 
   @override
-  TheSportsDbClient create(Ref ref) {
-    return theSportsDbClient(ref);
+  DateTime Function() create(Ref ref) {
+    return clock(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(TheSportsDbClient value) {
+  Override overrideWithValue(DateTime Function() value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<TheSportsDbClient>(value),
+      providerOverride: $SyncValueProvider<DateTime Function()>(value),
     );
   }
 }
 
-String _$theSportsDbClientHash() => r'cf895ec0e23fd8f3202a6e1a3157c5901bef29c6';
+String _$clockHash() => r'b868babc61229c5562fda84453cd2c5e28c49452';
 
 @ProviderFor(scoresDataSource)
 final scoresDataSourceProvider = ScoresDataSourceProvider._();
@@ -101,4 +108,4 @@ final class ScoresDataSourceProvider
   }
 }
 
-String _$scoresDataSourceHash() => r'b3d78352becc7db365790e89ccb2394e70b12379';
+String _$scoresDataSourceHash() => r'498a06b2adf3656bec147dca4e9955064e372290';

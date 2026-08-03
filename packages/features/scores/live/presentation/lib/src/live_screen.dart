@@ -12,7 +12,7 @@ class LiveScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final backgroundColor = ref.watch(liveThemeProvider.select((theme) => theme.backgroundColor));
-    final groups = ref.watch(watchMatchGroupsProvider(MatchFilter.live, MatchDay.today));
+    final groups = ref.watch(matchGroupsProvider(MatchFilter.live, MatchDay.today));
 
     return ColoredBox(
       color: backgroundColor,
@@ -22,7 +22,11 @@ class LiveScreen extends ConsumerWidget {
           Expanded(
             child: groups.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, _) => Center(child: Text('$error')),
+              error: (_, __) => ref.watch(liveEmptyStateFactoryProvider).create((
+                icon: Icons.cloud_off,
+                subtitle: LiveStrings.unavailableSubtitle,
+                title: LiveStrings.unavailableTitle,
+              )),
               data: (groups) => groups.isEmpty
                   ? ref.watch(liveEmptyStateFactoryProvider).create((
                       icon: Icons.sports_soccer,

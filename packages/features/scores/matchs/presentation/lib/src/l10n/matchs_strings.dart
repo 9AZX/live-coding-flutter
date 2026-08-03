@@ -7,6 +7,8 @@ class MatchsStrings {
   static const String dayYesterday = 'Hier';
   static const String emptyFeedSubtitle = 'Aucune rencontre pour ce filtre.';
   static const String emptyFeedTitle = 'Aucun match';
+  static const String unavailableFeedSubtitle = 'Les scores ne sont pas disponibles pour le moment.';
+  static const String unavailableFeedTitle = 'Scores indisponibles';
   static const String favoritesSectionTitle = 'Mes matchs';
   static const String filterAll = 'Tous';
   static const String filterFinished = 'Terminés';

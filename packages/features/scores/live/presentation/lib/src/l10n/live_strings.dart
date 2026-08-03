@@ -5,4 +5,6 @@ class LiveStrings {
   static const String emptySubtitle = "Revenez au coup d'envoi des prochaines rencontres.";
   static const String emptyTitle = 'Aucun match en direct';
   static const String headerTitle = 'En direct';
+  static const String unavailableSubtitle = 'Les scores ne sont pas disponibles pour le moment.';
+  static const String unavailableTitle = 'Scores indisponibles';
 }

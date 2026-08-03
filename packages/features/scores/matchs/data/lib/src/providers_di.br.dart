@@ -9,12 +9,18 @@ part 'providers_di.br.g.dart';
 
 /// Pays par ligue, pour l'affichage (l'endpoint events ne le renvoie pas toujours).
 @riverpod
-Map<int, String> countryByLeague(Ref _) {
+Map<String, String> countryByLeague(Ref _) {
   throw UnregisteredProviderException(countryByLeagueProvider);
 }
 
 /// Ids TheSportsDB des ligues du feed, dans l'ordre d'affichage des compétitions.
 @riverpod
-List<int> leagueIds(Ref _) {
+List<String> leagueIds(Ref _) {
   throw UnregisteredProviderException(leagueIdsProvider);
+}
+
+/// Racine de l'API scores. La feature ignore l'environnement sur lequel elle tourne.
+@riverpod
+String scoresBaseUrl(Ref _) {
+  throw UnregisteredProviderException(scoresBaseUrlProvider);
 }

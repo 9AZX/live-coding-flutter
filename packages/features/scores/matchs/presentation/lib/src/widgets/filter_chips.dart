@@ -23,7 +23,7 @@ class FilterChips extends ConsumerWidget {
     final selected = ref.watch(scoresFilterProvider);
     final day = ref.watch(selectedDayProvider);
     final counts = ref
-        .watch(watchMatchGroupsProvider(MatchFilter.all, day))
+        .watch(matchGroupsProvider(MatchFilter.all, day))
         .maybeWhen(data: _countByFilter, orElse: () => const <MatchFilter, int>{});
 
     return SingleChildScrollView(

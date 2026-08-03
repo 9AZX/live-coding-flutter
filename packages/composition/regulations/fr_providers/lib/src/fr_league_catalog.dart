@@ -4,25 +4,25 @@
 class FrLeagueCatalog {
   const FrLeagueCatalog._();
 
-  static const Map<int, String> countryByLeague = {
-    4328: 'Angleterre',
-    4331: 'Allemagne',
-    4332: 'Italie',
-    4334: 'France',
-    4335: 'Espagne',
-    4346: 'États-Unis',
-    4351: 'Brésil',
-    4406: 'Argentine',
+  static const Map<String, String> countryByLeague = {
+    '4328': 'Angleterre',
+    '4331': 'Allemagne',
+    '4332': 'Italie',
+    '4334': 'France',
+    '4335': 'Espagne',
+    '4346': 'États-Unis',
+    '4351': 'Brésil',
+    '4406': 'Argentine',
   };
 
-  static const List<int> leagueIds = [
-    4334, // Ligue 1
-    4328, // Premier League
-    4335, // La Liga
-    4332, // Serie A
-    4331, // Bundesliga
-    4351, // Brasileirão
-    4406, // Primera División
-    4346, // MLS
+  static const List<String> leagueIds = [
+    '4334', // Ligue 1
+    '4328', // Premier League
+    '4335', // La Liga
+    '4332', // Serie A
+    '4331', // Bundesliga
+    '4351', // Brasileirão
+    '4406', // Primera División
+    '4346', // MLS
   ];
 }

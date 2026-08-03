@@ -24,15 +24,15 @@ extension EventDtoMapper on EventDto {
     List<MatchEvent> events = const [],
     List<Lineup> lineups = const [],
   }) {
-    final leagueId = _int(this.leagueId);
+    final leagueId = _string(this.leagueId);
 
     return Match(
       away: _team(awayTeamId, awayTeam),
       awayScore: _int(awayScore),
       competition: Competition(
-        colorValue: _colorFor(leagueId),
+        colorValue: _colorFor(_int(leagueId)),
         country: country,
-        id: '$leagueId',
+        id: leagueId,
         name: _string(league),
       ),
       events: events,
@@ -53,7 +53,7 @@ extension EventDtoMapper on EventDto {
 Team _team(Object? id, Object? name) {
   final label = _string(name).isEmpty ? '?' : _string(name);
 
-  return Team(colorValue: _colorFor(_int(id)), id: '$id', name: label, shortName: _shortName(label));
+  return Team(colorValue: _colorFor(_int(id)), id: _string(id), name: label, shortName: _shortName(label));
 }
 
 MatchStatus _status(String status, String progress) {

@@ -1,6 +1,8 @@
+export 'src/behaviors/fetch_matches.dart';
 export 'src/behaviors/group_matches.dart';
 export 'src/behaviors/toggle_favorite_match.dart';
 export 'src/entities/competition.br.dart';
+export 'src/entities/errors/scores_error.br.dart';
 export 'src/entities/lineup.br.dart';
 export 'src/entities/match.br.dart';
 export 'src/entities/match_day.dart';

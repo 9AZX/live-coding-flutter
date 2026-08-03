@@ -25,7 +25,7 @@ class MatchsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final filter = ref.watch(scoresFilterProvider);
     final day = ref.watch(selectedDayProvider);
-    final groups = ref.watch(watchMatchGroupsProvider(filter, day));
+    final groups = ref.watch(matchGroupsProvider(filter, day));
 
     return Column(
       children: [
@@ -33,7 +33,13 @@ class MatchsScreen extends ConsumerWidget {
         Expanded(
           child: groups.when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (error, _) => Center(child: Text('$error')),
+            // L'échec est un `ScoresError` du domaine : il se traduit en copie
+            // utilisateur, jamais en `toString()` d'un type interne.
+            error: (_, __) => const EmptyState(
+              icon: Icons.cloud_off,
+              subtitle: MatchsStrings.unavailableFeedSubtitle,
+              title: MatchsStrings.unavailableFeedTitle,
+            ),
             data: (groups) => groups.isEmpty
                 ? const EmptyState(
                     icon: Icons.sports_soccer,

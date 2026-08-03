@@ -18,11 +18,11 @@ final countryByLeagueProvider = CountryByLeagueProvider._();
 final class CountryByLeagueProvider
     extends
         $FunctionalProvider<
-          Map<int, String>,
-          Map<int, String>,
-          Map<int, String>
+          Map<String, String>,
+          Map<String, String>,
+          Map<String, String>
         >
-    with $Provider<Map<int, String>> {
+    with $Provider<Map<String, String>> {
   /// Pays par ligue, pour l'affichage (l'endpoint events ne le renvoie pas toujours).
   CountryByLeagueProvider._()
     : super(
@@ -40,24 +40,25 @@ final class CountryByLeagueProvider
 
   @$internal
   @override
-  $ProviderElement<Map<int, String>> $createElement($ProviderPointer pointer) =>
-      $ProviderElement(pointer);
+  $ProviderElement<Map<String, String>> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
 
   @override
-  Map<int, String> create(Ref ref) {
+  Map<String, String> create(Ref ref) {
     return countryByLeague(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(Map<int, String> value) {
+  Override overrideWithValue(Map<String, String> value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<Map<int, String>>(value),
+      providerOverride: $SyncValueProvider<Map<String, String>>(value),
     );
   }
 }
 
-String _$countryByLeagueHash() => r'8403bf9951e560b3e7c51a8440b3d5adcd876577';
+String _$countryByLeagueHash() => r'8eceb904d67e37ece4aef50d773fcfcff4b09a8b';
 
 /// Ids TheSportsDB des ligues du feed, dans l'ordre d'affichage des compétitions.
 
@@ -67,8 +68,8 @@ final leagueIdsProvider = LeagueIdsProvider._();
 /// Ids TheSportsDB des ligues du feed, dans l'ordre d'affichage des compétitions.
 
 final class LeagueIdsProvider
-    extends $FunctionalProvider<List<int>, List<int>, List<int>>
-    with $Provider<List<int>> {
+    extends $FunctionalProvider<List<String>, List<String>, List<String>>
+    with $Provider<List<String>> {
   /// Ids TheSportsDB des ligues du feed, dans l'ordre d'affichage des compétitions.
   LeagueIdsProvider._()
     : super(
@@ -86,21 +87,67 @@ final class LeagueIdsProvider
 
   @$internal
   @override
-  $ProviderElement<List<int>> $createElement($ProviderPointer pointer) =>
+  $ProviderElement<List<String>> $createElement($ProviderPointer pointer) =>
       $ProviderElement(pointer);
 
   @override
-  List<int> create(Ref ref) {
+  List<String> create(Ref ref) {
     return leagueIds(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(List<int> value) {
+  Override overrideWithValue(List<String> value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<List<int>>(value),
+      providerOverride: $SyncValueProvider<List<String>>(value),
     );
   }
 }
 
-String _$leagueIdsHash() => r'cfeb336a8eaf6431ac8d650280a590d32747a640';
+String _$leagueIdsHash() => r'b9e5ba696080c02249eb77361a32821e48081463';
+
+/// Racine de l'API scores. La feature ignore l'environnement sur lequel elle tourne.
+
+@ProviderFor(scoresBaseUrl)
+final scoresBaseUrlProvider = ScoresBaseUrlProvider._();
+
+/// Racine de l'API scores. La feature ignore l'environnement sur lequel elle tourne.
+
+final class ScoresBaseUrlProvider
+    extends $FunctionalProvider<String, String, String>
+    with $Provider<String> {
+  /// Racine de l'API scores. La feature ignore l'environnement sur lequel elle tourne.
+  ScoresBaseUrlProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'scoresBaseUrlProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$scoresBaseUrlHash();
+
+  @$internal
+  @override
+  $ProviderElement<String> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  String create(Ref ref) {
+    return scoresBaseUrl(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(String value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<String>(value),
+    );
+  }
+}
+
+String _$scoresBaseUrlHash() => r'e9d292bbea60b1d7cb73a68c712d21d6a9ea2e85';

@@ -1,4 +1,5 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:scores_domain/src/behaviors/fetch_matches.dart';
 import 'package:scores_domain/src/behaviors/group_matches.dart';
 import 'package:scores_domain/src/behaviors/toggle_favorite_match.dart';
 import 'package:scores_domain/src/entities/match.br.dart';
@@ -24,6 +25,9 @@ List<Override> bindProviders({
 ];
 
 @riverpod
+FetchMatches fetchMatches(Ref ref) => FetchMatches(repository: ref.watch(scoresRepositoryProvider));
+
+@riverpod
 GroupMatches groupMatches(Ref _) => const GroupMatches();
 
 @riverpod
@@ -34,17 +38,20 @@ ToggleFavoriteMatch toggleFavoriteMatch(Ref ref) =>
 @riverpod
 Stream<Set<String>> favoriteMatchIds(Ref ref) => ref.watch(favoritesRepositoryProvider).watchFavoriteMatchIds();
 
-/// Flux des matchs d'un jour donné (une seule souscription par jour).
+/// Matchs d'un jour donné (un seul appel par jour). `getOrThrow` reporte l'échec
+/// du `Result` dans l'`AsyncValue` : la présentation lit un `AsyncError` typé.
 @riverpod
-Stream<List<Match>> watchMatches(Ref ref, MatchDay day) => ref.watch(scoresRepositoryProvider).watchMatches(day);
+Future<List<Match>> matches(Ref ref, MatchDay day) async =>
+    (await ref.watch(fetchMatchesProvider).execute(day)).getOrThrow();
 
-/// Matchs filtrés et regroupés par compétition, dérivés de [watchMatches]
-/// (pas de fetch supplémentaire). Utilisé par Matchs + En direct + les compteurs.
+/// Matchs filtrés et regroupés par compétition, dérivés de [matches] (pas d'appel
+/// supplémentaire). Utilisé par Matchs + En direct + les compteurs.
 @riverpod
-AsyncValue<List<MatchGroup>> watchMatchGroups(Ref ref, MatchFilter filter, MatchDay day) {
+AsyncValue<List<MatchGroup>> matchGroups(Ref ref, MatchFilter filter, MatchDay day) {
   final group = ref.watch(groupMatchesProvider);
 
-  return ref.watch(watchMatchesProvider(day)).whenData((matches) => group(matches, filter));
+  return ref.watch(matchesProvider(day)).whenData((matches) => group(matches, filter));
 }
 
-// WORKSHOP : provider `watchMatch(id)` (écran détail) à reconstruire ici.
+// WORKSHOP : behavior `FetchMatch` + provider `match(id)` (écran détail) à
+// reconstruire ici, sur le modèle de `fetchMatches` / `matches`.
