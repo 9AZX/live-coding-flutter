@@ -53,3 +53,7 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Mason (état local, régénéré par `mason get`) — comme en prod.
+.mason/
+mason-lock.json
