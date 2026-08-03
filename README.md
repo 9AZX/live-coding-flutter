@@ -14,6 +14,14 @@ mise run generate   # codegen (riverpod, freezed, auto_route, theme_tailor)
 cd apps/foot_scores && flutter run
 ```
 
+Deux marchés sont composables depuis le même binaire, pour illustrer l'inversion de
+dépendance (la France vend des cotes, la Pologne non) :
+
+```bash
+flutter run                                  # marché FR (défaut)
+flutter run --dart-define=REGULATION=pl      # marché PL
+```
+
 ## Documentation
 
 - [`AGENTS.md`](AGENTS.md) — architecture, conventions, règles de couches, tests

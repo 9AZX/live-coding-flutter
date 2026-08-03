@@ -29,6 +29,9 @@ packages/
   composition/
     app_providers/                # agrège tous les bindProviders() en une liste d'overrides
     app_router/                   # AppRouter (racine AutoRoute), shell à onglets, impls des ports de routing
+    regulations/
+      fr_providers/               # ce que le marché FR expose (catalogue de ligues + cotes)
+      pl_providers/               # ce que le marché PL expose (catalogue polonais, sans cotes)
   dsm/
     tactics_components/           # tokens (palette, radius, spacing, icônes) + widgets DSM — pas de Riverpod
     tactics_providers/            # contrats DI du DSM : tacticsPaletteProvider (throw) + bindProviders
@@ -38,6 +41,7 @@ packages/
     scores/matchs/    data|presentation      # feed des scores + widgets partagés
     scores/live/      presentation
     scores/favorites/ data|domain|presentation
+    scores/odds/      data|domain|presentation      # feature exposée sur certains marchés seulement
   utilities/
     exceptions/                   # UnregisteredProviderException
     givn/                         # DSL de test given(...).when(...).then(...)
@@ -159,8 +163,9 @@ feature/
 - **Domain** : indépendant (aucun import de Data ni Presentation)
 - **Data** : dépend uniquement de son domain
 - **Presentation** : dépend uniquement de son domain, jamais de Data
-- **Composition** (`app_providers`, `app_router`) : la seule couche autorisée à connaître
-  toutes les features à la fois, et la seule à appeler `bindProviders(...)`
+- **Composition** (`app_providers`, `app_router`, `regulations/*`) : la seule couche
+  autorisée à connaître toutes les features à la fois, et la seule à appeler
+  `bindProviders(...)` / `bindRegulationProviders(...)`
 
 ### Le triplet de providers + `bindProviders`
 
@@ -224,6 +229,57 @@ Pour exposer un widget à une autre feature sans import feature → feature :
 `providers_di.br.dart` du **consommateur** et fournie par la composition via son
 `bindProviders(...)`. Les arguments sont des types de `shared_domain` ou des records
 structurels — jamais un type appartenant à une autre feature.
+
+---
+
+## Regulations : exposer des features par marché
+
+C'est ici que l'**inversion de dépendance** devient concrète. Une feature ne sait pas
+sur quel marché elle tourne : elle déclare un contrat, un package `regulations/*` y
+répond. Deux marchés, deux réponses, **zéro ligne changée dans la feature**.
+
+Chaque package de marché (`fr_providers`, `pl_providers`) expose une seule fonction
+`{xx}Providers()` qui retourne des overrides, et le `main` de l'app choisit le marché.
+En production chaque marché a son propre app (`apps/betclic_fr`, `apps/betclic_pl`) qui
+ne dépend que de son package ; ici un binaire unique bascule via
+`--dart-define=REGULATION=fr|pl`, pour pouvoir montrer la différence en direct.
+
+### Deux formes de variation
+
+| Ce qui varie | Contrat | Exemple |
+|--------------|---------|---------|
+| Une **valeur** de configuration | provider qui `throw`, alimenté par `bindRegulationProviders` | `leagueIdsProvider` : FR démarre sur la Ligue 1, PL sur l'Ekstraklasa |
+| Une **feature entière** | `WidgetFactory<T>?` **nullable** qui `throw` | `matchOddsFactoryProvider` : FR injecte les cotes, PL passe `null` |
+
+Le contrat nullable throw quand même : chaque marché doit répondre **explicitement**
+oui (une fabrique) ou non (`null`). Un marché qu'on oublie de câbler plante au premier
+build avec `UnregisteredProviderException` — jamais un écran silencieusement vide.
+
+```dart
+// features/scores/matchs/presentation — la feature hôte ignore ce qui s'affiche là
+@riverpod
+WidgetFactory<Match>? matchOddsFactory(Ref _) {
+  throw UnregisteredProviderException(matchOddsFactoryProvider);
+}
+
+// composition/regulations/fr_providers — le marché FR vend des paris
+...matchs_presentation.bindRegulationProviders(oddsFactory: const OddsBadgeWidgetFactory()),
+
+// composition/regulations/pl_providers — pas de cotes ici
+...matchs_presentation.bindRegulationProviders(oddsFactory: null),
+```
+
+`pl_providers` ne déclare même pas `odds_presentation` en dépendance : la feature
+n'entre pas dans le binaire polonais. L'argument de la fabrique est un type de
+`shared_domain` (`Match`), donc `matchs` et `odds` ne se connaissent jamais.
+
+### Ajouter une feature propre à un marché
+
+1. Créer le trio via Mason sous `packages/features/<universe>/<feature>/`.
+2. Exposer son widget via une `WidgetFactory<T>` dans son `widget_factories.dart`.
+3. Dans la feature **hôte**, déclarer le contrat nullable dans `providers_di.br.dart`
+   et l'ouvrir dans `bindRegulationProviders(...)`.
+4. Répondre dans **chaque** package de marché — une fabrique, ou `null`.
 
 ---
 

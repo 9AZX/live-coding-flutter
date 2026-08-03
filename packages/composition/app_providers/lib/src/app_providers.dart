@@ -20,10 +20,17 @@ import 'package:tactics_providers/tactics_providers.dart' as tactics_providers;
 /// Le thème de chaque feature est optionnel : omis ici, chaque feature s'affiche
 /// avec son thème par défaut interne dérivé de la palette.
 ///
+/// [regulation] vient du package du marché (`fr_providers`, `pl_providers`) : c'est
+/// lui qui décide des compétitions affichées et des features exposées. En prod,
+/// chaque marché a son app ; ici un seul binaire choisit via `--dart-define`.
+///
 /// [scoresRepository] permet de substituer la source réseau (tests, mode démo
 /// hors-ligne) : la couche data réelle n'est alors pas branchée du tout. Riverpod
 /// interdit d'overrider deux fois le même provider, donc le choix se fait ici.
-List<Override> appProviders({ProviderListenable<ScoresRepository>? scoresRepository}) => [
+List<Override> appProviders({
+  required List<Override> regulation,
+  ProviderListenable<ScoresRepository>? scoresRepository,
+}) => [
   ...tactics_providers.bindProviders(palette: Provider((_) => TacticsPalette.light())),
   if (scoresRepository case final scoresRepository?)
     ...scores_domain.bindProviders(scoresRepository: scoresRepository)
@@ -43,4 +50,7 @@ List<Override> appProviders({ProviderListenable<ScoresRepository>? scoresReposit
     headerFactory: const ScoresHeaderWidgetFactory(),
     listFactory: const FavoritesListWidgetFactory(),
   ),
+  // Le marché en dernier : il alimente les contrats de régulation (catalogue de
+  // compétitions, features optionnelles) laissés ouverts par les features.
+  ...regulation,
 ];

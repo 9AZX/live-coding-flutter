@@ -55,6 +55,8 @@ class MatchRow extends ConsumerWidget {
                     _TeamLine(team: match.home, theme: theme),
                     const SizedBox(height: 6),
                     _TeamLine(team: match.away, theme: theme),
+                    // Feature exposée par le marché : absente, la rangée ne change pas.
+                    ?ref.watch(matchOddsFactoryProvider)?.create(match),
                   ],
                 ),
               ),

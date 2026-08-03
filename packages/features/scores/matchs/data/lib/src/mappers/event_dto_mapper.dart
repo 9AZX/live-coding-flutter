@@ -1,4 +1,3 @@
-import 'package:matchs_data/src/api/the_sports_db_config.dart';
 import 'package:matchs_data/src/dtos/event_dto.br.dart';
 import 'package:scores_domain/scores_domain.dart';
 
@@ -18,7 +17,13 @@ const _palette = [
 /// Traduit le JSON TheSportsDB en entités du domaine. Tolérant : les champs
 /// arrivent en `String` ou `null` selon le statut du match.
 extension EventDtoMapper on EventDto {
-  Match toEntity({List<MatchEvent> events = const [], List<Lineup> lineups = const []}) {
+  /// [country] vient du catalogue injecté par le marché : l'endpoint events ne le
+  /// renvoie pas de façon fiable.
+  Match toEntity({
+    String country = '',
+    List<MatchEvent> events = const [],
+    List<Lineup> lineups = const [],
+  }) {
     final leagueId = _int(this.leagueId);
 
     return Match(
@@ -26,7 +31,7 @@ extension EventDtoMapper on EventDto {
       awayScore: _int(awayScore),
       competition: Competition(
         colorValue: _colorFor(leagueId),
-        country: TheSportsDbConfig.countryByLeague[leagueId] ?? '',
+        country: country,
         id: '$leagueId',
         name: _string(league),
       ),

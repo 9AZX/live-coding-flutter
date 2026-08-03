@@ -8,6 +8,63 @@ part of 'providers_di.br.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// Feature optionnelle, exposée par certains marchés seulement : le contrat throw
+/// jusqu'à ce que la composition réponde — une fabrique, ou `null` pour l'absence.
+/// Matchs ignore totalement quelle feature s'affiche là.
+
+@ProviderFor(matchOddsFactory)
+final matchOddsFactoryProvider = MatchOddsFactoryProvider._();
+
+/// Feature optionnelle, exposée par certains marchés seulement : le contrat throw
+/// jusqu'à ce que la composition réponde — une fabrique, ou `null` pour l'absence.
+/// Matchs ignore totalement quelle feature s'affiche là.
+
+final class MatchOddsFactoryProvider
+    extends
+        $FunctionalProvider<
+          WidgetFactory<Match>?,
+          WidgetFactory<Match>?,
+          WidgetFactory<Match>?
+        >
+    with $Provider<WidgetFactory<Match>?> {
+  /// Feature optionnelle, exposée par certains marchés seulement : le contrat throw
+  /// jusqu'à ce que la composition réponde — une fabrique, ou `null` pour l'absence.
+  /// Matchs ignore totalement quelle feature s'affiche là.
+  MatchOddsFactoryProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'matchOddsFactoryProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$matchOddsFactoryHash();
+
+  @$internal
+  @override
+  $ProviderElement<WidgetFactory<Match>?> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  WidgetFactory<Match>? create(Ref ref) {
+    return matchOddsFactory(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(WidgetFactory<Match>? value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<WidgetFactory<Match>?>(value),
+    );
+  }
+}
+
+String _$matchOddsFactoryHash() => r'563c0d99d491271c876c1afa13feb14cd91e8de2';
 
 @ProviderFor(matchsRouting)
 final matchsRoutingProvider = MatchsRoutingProvider._();

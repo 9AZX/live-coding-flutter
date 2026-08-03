@@ -1,7 +1,6 @@
 import 'dart:developer' as developer;
 
 import 'package:matchs_data/src/api/the_sports_db_client.dart';
-import 'package:matchs_data/src/api/the_sports_db_config.dart';
 import 'package:matchs_data/src/dtos/event_dto.br.dart';
 import 'package:matchs_data/src/mappers/event_dto_mapper.dart';
 import 'package:matchs_data/src/package_name.dart';
@@ -10,12 +9,22 @@ import 'package:scores_domain/scores_domain.dart';
 /// Source de données réelle TheSportsDB. Implémente directement le contrat du
 /// domaine : une seule source, donc pas de classe repository intermédiaire.
 ///
+/// Le catalogue de ligues est injecté : la source ne décide pas du marché.
+///
 /// WORKSHOP : `watchMatch(id)` (détail) à reconstruire — récupérer l'event, sa
 /// timeline et ses compositions, puis mapper vers un `Match` enrichi.
 final class TheSportsDbScoresDataSource implements ScoresRepository {
   final TheSportsDbClient _client;
+  final Map<int, String> _countryByLeague;
+  final List<int> _leagueIds;
 
-  TheSportsDbScoresDataSource({required TheSportsDbClient client}) : _client = client;
+  TheSportsDbScoresDataSource({
+    required TheSportsDbClient client,
+    required Map<int, String> countryByLeague,
+    required List<int> leagueIds,
+  }) : _client = client,
+       _countryByLeague = countryByLeague,
+       _leagueIds = leagueIds;
 
   @override
   Stream<List<Match>> watchMatches(MatchDay day) => Stream.fromFuture(_fetchFeed(day));
@@ -24,10 +33,8 @@ final class TheSportsDbScoresDataSource implements ScoresRepository {
     final date = _dateFor(day);
 
     // Un appel par ligue, lancés en parallèle : `Future.wait` restitue les résultats
-    // dans l'ordre de `leagueIds`, donc l'ordre des cartes de compétition reste stable.
-    final perLeague = await Future.wait(
-      TheSportsDbConfig.leagueIds.map((leagueId) => _fetchLeague(date, leagueId)),
-    );
+    // dans l'ordre de `_leagueIds`, donc l'ordre des cartes de compétition reste stable.
+    final perLeague = await Future.wait(_leagueIds.map((leagueId) => _fetchLeague(date, leagueId)));
 
     final matches = perLeague.expand((leagueMatches) => leagueMatches).toList();
 
@@ -43,7 +50,7 @@ final class TheSportsDbScoresDataSource implements ScoresRepository {
       final events = (await _client.eventsDay(date, leagueId)).map(EventDto.fromJson).toList()
         ..sort((a, b) => '${a.timestamp}'.compareTo('${b.timestamp}'));
 
-      return events.map((event) => event.toEntity()).toList();
+      return events.map((event) => event.toEntity(country: _countryByLeague[leagueId] ?? '')).toList();
     } on Exception catch (e, s) {
       developer.log('ligue $leagueId ignorée pour le $date', name: packageName, error: e, stackTrace: s);
 

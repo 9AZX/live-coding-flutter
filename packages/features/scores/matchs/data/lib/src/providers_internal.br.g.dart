@@ -101,4 +101,4 @@ final class ScoresDataSourceProvider
   }
 }
 
-String _$scoresDataSourceHash() => r'b803338d31dab87fe3a3798058edb5f5772a3a0d';
+String _$scoresDataSourceHash() => r'b3d78352becc7db365790e89ccb2394e70b12379';

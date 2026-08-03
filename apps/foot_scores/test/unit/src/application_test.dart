@@ -3,28 +3,53 @@ import 'package:app_router/app_router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fr_providers/fr_providers.dart';
+import 'package:pl_providers/pl_providers.dart';
+import 'package:riverpod/misc.dart';
 import 'package:scores_domain/scores_domain.dart' as scores_domain;
 import 'package:shouldly/shouldly.dart';
 
+scores_domain.Team _team(String id) => scores_domain.Team(colorValue: 0, id: id, name: 'Équipe $id', shortName: id);
+
 /// Repository sans réseau : le test vérifie le câblage, pas l'API.
-final class _EmptyScoresRepository implements scores_domain.ScoresRepository {
+final class _SingleMatchScoresRepository implements scores_domain.ScoresRepository {
   @override
-  Stream<List<scores_domain.Match>> watchMatches(scores_domain.MatchDay day) =>
-      Stream.value(const <scores_domain.Match>[]);
+  Stream<List<scores_domain.Match>> watchMatches(scores_domain.MatchDay day) => Stream.value([
+    scores_domain.Match(
+      away: _team('b'),
+      awayScore: 0,
+      competition: const scores_domain.Competition(
+        colorValue: 0,
+        country: 'France',
+        id: '4334',
+        name: 'Ligue 1',
+      ),
+      home: _team('a'),
+      homeScore: 0,
+      id: 'm1',
+      kickoff: '20:45',
+      status: scores_domain.MatchStatus.upcoming,
+    ),
+  ]);
+}
+
+Future<void> _pumpMarket(WidgetTester tester, List<Override> regulation) async {
+  await tester.pumpWidget(
+    ProviderScope(
+      // La composition réelle, avec la seule source réseau substituée.
+      overrides: appProviders(
+        regulation: regulation,
+        scoresRepository: Provider<scores_domain.ScoresRepository>((_) => _SingleMatchScoresRepository()),
+      ),
+      child: const _TestApp(),
+    ),
+  );
+  await tester.pumpAndSettle();
 }
 
 void main() {
   testWidgets('l’app démarre sur le feed des matchs, avec ses trois onglets', (tester) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        // La composition réelle, avec la seule source réseau substituée.
-        overrides: appProviders(
-          scoresRepository: Provider<scores_domain.ScoresRepository>((_) => _EmptyScoresRepository()),
-        ),
-        child: const _TestApp(),
-      ),
-    );
-    await tester.pumpAndSettle();
+    await _pumpMarket(tester, frProviders());
 
     // Tout le graphe d'injection doit être câblé : un contrat DI non fourni
     // lèverait UnregisteredProviderException au premier build.
@@ -33,6 +58,23 @@ void main() {
     find.text('Matchs').evaluate().length.should.be(1);
     find.text('En direct').evaluate().length.should.be(1);
     find.text('Favoris').evaluate().length.should.be(1);
+  });
+
+  testWidgets('sur le marché français, les cotes s’affichent sur la rangée de match', (tester) async {
+    await _pumpMarket(tester, frProviders());
+
+    expect(tester.takeException(), isNull);
+    // « N » n'est rendu que par le badge de cotes.
+    find.text('N').evaluate().length.should.be(1);
+  });
+
+  testWidgets('sur le marché polonais, la même rangée de match n’a pas de cotes', (tester) async {
+    await _pumpMarket(tester, plProviders());
+
+    expect(tester.takeException(), isNull);
+    find.text('N').evaluate().length.should.be(0);
+    // La rangée elle-même est bien là : seule la feature optionnelle a disparu.
+    find.text('Équipe a').evaluate().length.should.be(1);
   });
 }
 
