@@ -15,4 +15,6 @@ List<Override> plProviders() => [
     leagueIds: PlLeagueCatalog.leagueIds,
   ),
   ...matchs_presentation.bindRegulationProviders(oddsFactory: null),
+  // WORKSHOP : répondre aussi pour l'écran détail (étape 7) — `null`, pas de cotes ici.
+  // ...match_detail_presentation.bindRegulationProviders(oddsFactory: null),
 ];

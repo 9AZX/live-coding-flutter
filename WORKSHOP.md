@@ -17,8 +17,12 @@ Taper une ligne de match → une page **Détail** s'ouvre, avec :
 - un onglet **Résumé** (la timeline : buts, cartons) ;
 - un onglet **Compo** (les compositions des deux équipes).
 
+Puis, en bonus d'archi : afficher les **cotes** sur cet écran… mais **seulement sur
+le marché français**, sans que l'écran sache qu'un marché existe.
+
 Au passage tu vas toucher **toutes les couches** d'une vraie archi Flutter :
-domaine, data (+ DTO), présentation, navigation, injection de dépendances.
+domaine, data (+ DTO), présentation, navigation, injection de dépendances,
+composition par marché.
 
 ---
 
@@ -30,14 +34,21 @@ features/scores/
   matchs/data                 →  l'implémentation réelle (API TheSportsDB)
   matchs/presentation         →  l'UI partagée (widgets, thème) + l'écran Matchs
   live / favorites            →  les autres onglets
+  odds                        →  les cotes 1 N 2, exposées sur certains marchés seulement
   match_detail/presentation   →  ⛔ À CRÉER (l'écran de détail)
 composition/
   app_providers               →  agrège tous les bindProviders()
   app_router                  →  AppRouter (AutoRoute) + impls des ports de routing
+  regulations/fr_providers    →  ce que le marché FR expose
+  regulations/pl_providers    →  ce que le marché PL expose
 ```
 
 **Règle d'or** : une feature **n'importe jamais** une autre feature. Ce qui est
 partagé passe soit par `shared_domain`, soit par **injection** (on verra).
+
+**Deux marchés** tournent sur le même code : la France vend des cotes, la Pologne
+non, et `matchs/presentation` est identique dans les deux cas. Tu exploiteras ce
+mécanisme à l'étape 7.
 
 ---
 
@@ -53,8 +64,11 @@ cd <le_package_modifié> && dart run build_runner build   # ou juste un package
 # vérifier
 mise run analyze && mise run test
 
-# lancer l'app
+# lancer l'app (marché FR par défaut)
 cd apps/foot_scores && flutter run
+
+# lancer le marché polonais (mêmes features, sans les cotes)
+cd apps/foot_scores && flutter run --dart-define=REGULATION=pl
 ```
 
 > 💡 À chaque étape, des commentaires `// WORKSHOP` dans le code te montrent
@@ -157,7 +171,17 @@ abstract class TimelineEntryDto with _$TimelineEntryDto {
 
 ### 2.3 — Le mapper (DTO → entité du domaine)
 **Fichier** `lib/src/mappers/event_dto_mapper.dart` : les mappers sont des
-**extensions** sur le DTO (`extension EventDtoMapper on EventDto { Match toEntity() }`).
+**extensions** sur le DTO. Regarde la signature existante :
+
+```dart
+extension EventDtoMapper on EventDto {
+  Match toEntity({String country = '', List<MatchEvent> events, List<Lineup> lineups}) { … }
+}
+```
+
+`country` est passé par le data source, qui le tient du **catalogue de ligues injecté
+par le marché** — le mapper ne devine rien tout seul.
+
 Ajoute sur le même modèle `toEvents` / `toLineups` pour tes nouveaux DTOs (un but =
 `strTimeline == 'Goal'`, équipe à domicile = `strHome == 'Yes'`).
 
@@ -166,8 +190,13 @@ Ajoute sur le même modèle `toEvents` / `toLineups` pour tes nouveaux DTOs (un 
 ```dart
 @override
 Stream<Match?> watchMatch(String id) => Stream.fromFuture(_fetchDetail(id));
-// _fetchDetail : event + timeline + lineup → dto.toEntity(events: …, lineups: …)
+// _fetchDetail : event + timeline + lineup
+//   → dto.toEntity(country: _countryByLeague[leagueId] ?? '', events: …, lineups: …)
 ```
+
+> 💡 `_countryByLeague` et `_leagueIds` sont des champs **injectés** dans le
+> constructeur : la source ne connaît pas les compétitions du marché. Regarde
+> `providers_internal.br.dart` pour voir d'où ils viennent.
 
 **✅ Vérifie**
 ```bash
@@ -322,7 +351,77 @@ Dans **`packages/composition/app_providers`** :
 
 ---
 
-## Étape 7 — Lancer 🎉
+## Étape 7 — 🟢 EXERCICE : les cotes, en France seulement  (`regulations/`)
+
+**Objectif** : ajouter les **cotes** sur ton écran détail — mais uniquement sur le
+marché français. Ton écran ne doit **pas** savoir qu'un marché existe, ni que la
+feature `odds` existe.
+
+C'est l'**inversion de dépendance** en pratique : ton écran déclare *« quelqu'un peut
+me donner un widget de cotes »*, et chaque marché répond oui ou non.
+
+Le modèle à copier est déjà dans `matchs/presentation` (`matchOddsFactoryProvider`) :
+va le lire d'abord.
+
+### 7.1 — Déclarer le contrat (dans **ta** feature)
+`match_detail/presentation/lib/src/providers_di.br.dart` — un contrat **nullable**,
+qui `throw` quand même :
+```dart
+@riverpod
+WidgetFactory<Match>? matchDetailOddsFactory(Ref _) {
+  throw UnregisteredProviderException(matchDetailOddsFactoryProvider);
+}
+```
+> Pourquoi throw si c'est nullable ? Pour forcer **chaque** marché à répondre
+> explicitement. Un marché oublié plante au premier build au lieu d'afficher un
+> écran incomplet en silence.
+
+Ajoute `widget_factory_presentation:` et `scores_domain:` au `pubspec.yaml`.
+
+### 7.2 — Ouvrir le contrat à la composition
+`match_detail/presentation/lib/src/providers.dart` :
+```dart
+List<Override> bindRegulationProviders({required WidgetFactory<Match>? oddsFactory}) => [
+  matchDetailOddsFactoryProvider.overrideWithValue(oddsFactory),
+];
+```
+
+### 7.3 — L'utiliser dans l'écran
+`match_detail_screen.dart`, là où tu veux les cotes :
+```dart
+?ref.watch(matchDetailOddsFactoryProvider)?.create(match),
+```
+> Le `?` devant l'élément est le *null-aware element* de Dart 3 : pas de cotes,
+> pas de ligne dans la `Column`. Aucun `if` à écrire.
+
+### 7.4 — Répondre, marché par marché
+`composition/regulations/fr_providers` — la France vend des paris :
+```dart
+// pubspec.yaml : ajoute match_detail_presentation:
+...match_detail_presentation.bindRegulationProviders(oddsFactory: const OddsBadgeWidgetFactory()),
+```
+
+`composition/regulations/pl_providers` — pas de cotes ici :
+```dart
+// pubspec.yaml : ajoute match_detail_presentation: (mais SURTOUT PAS odds_presentation)
+...match_detail_presentation.bindRegulationProviders(oddsFactory: null),
+```
+
+**✅ Vérifie les deux marchés**
+```bash
+mise run bs && mise run generate && mise run analyze
+cd apps/foot_scores
+flutter run                                # FR → les cotes s'affichent
+flutter run --dart-define=REGULATION=pl    # PL → même écran, sans cotes
+```
+
+> 🎓 Le point clé : entre les deux marchés, **ton écran n'a pas changé d'une ligne**.
+> Et comme `pl_providers` ne déclare pas `odds_presentation`, la feature n'entre même
+> pas dans le binaire polonais.
+
+---
+
+## Étape 8 — Lancer 🎉
 
 ```bash
 mise run bs
@@ -345,9 +444,14 @@ Tape un match → l'écran Détail s'ouvre. **Bravo !** 🥳
    **composition** décide de la destination.
    Corollaire : un contrat DI (`providers_di.br.dart`) `throw` tant que personne ne
    l'a fourni — l'erreur est immédiate et explicite, jamais un `null` silencieux.
-3. **Un DTO** isole le JSON de l'API du reste du code : si l'API change, tu ne
+3. **Inversion de dépendance** : une feature déclare un *contrat* et ne sait jamais
+   qui le remplit. C'est ce qui permet à un même écran d'avoir les cotes en France et
+   pas en Pologne, sans une seule condition `if (marché == …)` dans la feature.
+   Deux formes : une **valeur** injectée (le catalogue de ligues) ou une **feature
+   entière** injectée (`WidgetFactory<T>?`, `null` = absente).
+4. **Un DTO** isole le JSON de l'API du reste du code : si l'API change, tu ne
    corriges qu'un seul endroit.
-4. **`build_runner`** régénère le code annoté (`@riverpod`, `@freezed`,
+5. **`build_runner`** régénère le code annoté (`@riverpod`, `@freezed`,
    `@TailorMixinComponent`, `@RoutePage`) — relance-le à chaque fois que `analyze`
    parle de `_$...`, `.g.dart`, `.freezed.dart`, `.tailor.dart` ou `.gr.dart`.
    Seuls les fichiers en **`.br.dart`** sont passés aux générateurs.

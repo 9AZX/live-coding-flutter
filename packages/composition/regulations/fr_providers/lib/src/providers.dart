@@ -19,4 +19,6 @@ List<Override> frProviders() => [
   ...odds_data.bindProviders(),
   ...odds_presentation.bindProviders(),
   ...matchs_presentation.bindRegulationProviders(oddsFactory: const OddsBadgeWidgetFactory()),
+  // WORKSHOP : exposer aussi les cotes sur l'écran détail (étape 7) —
+  // ...match_detail_presentation.bindRegulationProviders(oddsFactory: const OddsBadgeWidgetFactory()),
 ];
