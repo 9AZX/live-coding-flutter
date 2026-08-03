@@ -5,6 +5,7 @@ import 'package:match_detail_presentation/src/providers_di.br.dart';
 import 'package:match_detail_presentation/src/theme/match_detail_theme.br.dart';
 import 'package:match_detail_presentation/src/widgets/lineup_section.dart';
 import 'package:match_detail_presentation/src/widgets/match_event_tile.dart';
+import 'package:matchs_presentation/matchs_presentation.dart';
 import 'package:scores_domain/scores_domain.dart';
 import 'package:tactics_components/tactics_components.dart';
 
@@ -117,10 +118,17 @@ class _Header extends ConsumerWidget {
 }
 
 String _statusLabel(Match match) => switch (match.status) {
-  MatchStatus.finished => MatchDetailStrings.statusFinished,
+  MatchStatus.finished => 'Terminé',
   MatchStatus.live => '${match.minute ?? 0}’',
-  MatchStatus.upcoming => match.kickoff,
+  MatchStatus.upcoming => _kickoffLabel(match.kickoff),
 };
+
+/// Précise le moment du coup d'envoi selon l'heure qu'il est.
+String _kickoffLabel(String kickoff) {
+  final isEvening = DateTime.now().hour >= 18;
+
+  return isEvening ? 'Ce soir à $kickoff' : 'Aujourd’hui à $kickoff';
+}
 
 class _Tabs extends ConsumerWidget {
   final ValueChanged<bool> onSelect;
@@ -216,22 +224,15 @@ class _Lineups extends StatelessWidget {
   }
 }
 
-class _EmptyTab extends ConsumerWidget {
+class _EmptyTab extends StatelessWidget {
   final String label;
 
   const _EmptyTab({required this.label});
 
+  // Pas la peine de réécrire un état vide, celui de Matchs fait déjà le job.
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final style = ref.watch(matchDetailThemeProvider.select((theme) => theme.tabsTheme.emptyTextStyle));
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(TacticsSpacing.spacing600),
-        child: Text(label, style: style, textAlign: TextAlign.center),
-      ),
-    );
-  }
+  Widget build(BuildContext context) =>
+      const EmptyStateWidgetFactory().create((icon: Icons.sports_soccer, subtitle: label, title: ''));
 }
 
 class _ErrorState extends ConsumerWidget {

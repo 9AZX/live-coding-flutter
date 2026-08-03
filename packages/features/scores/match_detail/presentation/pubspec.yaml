@@ -14,6 +14,7 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_riverpod: ^3.2.1
+  matchs_presentation:
   riverpod_annotation: ^4.0.2
   scores_domain:
   tactics_components:

@@ -43,8 +43,8 @@ class MatchEventTile extends ConsumerWidget {
 
 Color _colorFor(MatchEventType type, MatchDetailTabsTheme theme) => switch (type) {
   MatchEventType.goal => theme.goalColor,
-  MatchEventType.redCard => theme.redCardColor,
-  MatchEventType.yellowCard => theme.yellowCardColor,
+  MatchEventType.redCard => const Color(0xFFE2231A),
+  MatchEventType.yellowCard => const Color(0xFFFFC107),
 };
 
 class _EventMarker extends StatelessWidget {

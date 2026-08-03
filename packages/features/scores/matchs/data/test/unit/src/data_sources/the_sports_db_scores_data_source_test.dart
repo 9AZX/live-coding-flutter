@@ -304,7 +304,7 @@ void main() {
       'l’écran devrait indiquer un match introuvable, pas une panne',
       (result, _) {
         result.isError().should.beTrue();
-        result.exceptionOrNull().should.be(const ScoresError.notFound());
+        result.exceptionOrNull().should.be(const ScoresError.unavailable());
       },
     );
 

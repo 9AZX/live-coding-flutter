@@ -52,7 +52,7 @@ final class TheSportsDbScoresDataSource implements ScoresRepository {
       if (eventResponse.data case final data?) {
         final event = EventsResponseDto.fromJson(data).events?.firstOrNull;
 
-        if (event == null) return const Failure(ScoresError.notFound());
+        if (event == null) throw StateError('Match $id introuvable');
 
         final match = event.toEntity(country: _countryByLeague[event.leagueId ?? ''] ?? '');
         final entries = _timelineEntries(timelineResponse);
