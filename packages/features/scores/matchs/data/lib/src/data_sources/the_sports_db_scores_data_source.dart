@@ -22,21 +22,33 @@ final class TheSportsDbScoresDataSource implements ScoresRepository {
 
   Future<List<Match>> _fetchFeed(MatchDay day) async {
     final date = _dateFor(day);
-    final matches = <Match>[];
 
-    for (final leagueId in TheSportsDbConfig.leagueIds) {
+    // Un appel par ligue, lancés en parallèle : `Future.wait` restitue les résultats
+    // dans l'ordre de `leagueIds`, donc l'ordre des cartes de compétition reste stable.
+    final perLeague = await Future.wait(
+      TheSportsDbConfig.leagueIds.map((leagueId) => _fetchLeague(date, leagueId)),
+    );
+
+    final matches = perLeague.expand((leagueMatches) => leagueMatches).toList();
+
+    developer.log('feed: ${matches.length} matchs du $date', name: packageName);
+
+    return matches;
+  }
+
+  /// Une ligue qui échoue (réseau, quota de la clé de test) ne doit pas vider tout
+  /// le feed : on la journalise et on rend les autres.
+  Future<List<Match>> _fetchLeague(String date, int leagueId) async {
+    try {
       final events = (await _client.eventsDay(date, leagueId)).map(EventDto.fromJson).toList()
         ..sort((a, b) => '${a.timestamp}'.compareTo('${b.timestamp}'));
 
-      matches.addAll(events.map((event) => event.toEntity()));
+      return events.map((event) => event.toEntity()).toList();
+    } on Exception catch (e, s) {
+      developer.log('ligue $leagueId ignorée pour le $date', name: packageName, error: e, stackTrace: s);
+
+      return const [];
     }
-
-    developer.log(
-      'feed: ${matches.length} matchs du $date (ligues ${TheSportsDbConfig.leagueIds})',
-      name: packageName,
-    );
-
-    return matches;
   }
 
   // ponytail: date via l'horloge appareil (en prod : source NTP type Kronos).

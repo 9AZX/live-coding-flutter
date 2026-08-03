@@ -1,6 +1,6 @@
 # foot_scores
 
-App de démonstration (scores foot, Coupe du Monde) servant de **template
+App de démonstration (scores foot, Ligue 1) servant de **template
 d'exercice de live coding Flutter**. Elle reproduit l'architecture et les
 conventions du monorepo de production `flutter-front` (Betclic) à petite échelle :
 Dart workspace + Melos, trios de packages `domain` / `data` / `presentation`,

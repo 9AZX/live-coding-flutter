@@ -3,7 +3,7 @@ import 'package:givn/givn.dart';
 import 'package:scores_domain/scores_domain.dart';
 import 'package:shouldly/shouldly.dart';
 
-Competition _competition(String id) => Competition(colorValue: 0, country: 'Monde', id: id, name: 'Ligue $id');
+Competition _competition(String id) => Competition(colorValue: 0, country: 'France', id: id, name: 'Ligue $id');
 
 Team _team(String id) => Team(colorValue: 0, id: id, name: 'Équipe $id', shortName: id);
 

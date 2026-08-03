@@ -1,6 +1,6 @@
 # 🏟️ Workshop Flutter — Reconstruire la page « Détail d'un match »
 
-Bienvenue ! Ce dépôt est une app de scores foot (Coupe du Monde) déjà
+Bienvenue ! Ce dépôt est une app de scores foot (Ligue 1) déjà
 fonctionnelle… **sauf une chose** : quand tu tapes sur un match, rien ne se
 passe. La page de détail a été retirée. **À toi de la reconstruire**, couche par
 couche.
