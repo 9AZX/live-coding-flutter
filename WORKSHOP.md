@@ -65,14 +65,14 @@ Commandes que tu vas répéter :
 mise run generate                  # tout le workspace
 cd <le_package_modifié> && dart run build_runner build   # ou juste un package
 
-# vérifier
+# vérifier — c'est ta boucle de retour, pas besoin de lancer l'app
 mise run analyze && mise run test
 
 # lancer l'app (marché FR par défaut)
-cd apps/foot_scores && flutter run
+cd apps/foot_scores && flutter run -d macos
 
 # lancer le marché polonais (mêmes features, sans les cotes)
-cd apps/foot_scores && flutter run --dart-define=REGULATION=pl
+cd apps/foot_scores && flutter run -d macos --dart-define=REGULATION=pl
 ```
 
 > 💡 À chaque étape, des commentaires `// WORKSHOP` dans le code te montrent
@@ -80,6 +80,24 @@ cd apps/foot_scores && flutter run --dart-define=REGULATION=pl
 > ```bash
 > grep -rn "WORKSHOP" packages
 > ```
+
+> 📋 Garde **`CONVENTIONS.md`** ouvert à côté : c'est la version une page des règles
+> d'archi. C'est là que tu trouveras la réponse à « où est-ce que ça va, ça ? ».
+
+---
+
+## ⏱️ Le périmètre du jour
+
+3 heures, donc on coupe volontairement tout ce qui n'est pas de l'architecture :
+
+| Hors périmètre | Pourquoi |
+|---|---|
+| **Le look de l'écran** | Une `Column` de `Text`, c'est très bien. On ne fait pas d'UI aujourd'hui. |
+| **`LineupEntryDto`** (compos) | Un seul DTO suffit à comprendre ce qu'est un DTO. Bonus si tu as le temps. |
+| **Les tests** (étape 2.5) | À lire et à commenter, à écrire seulement si ton trio est en avance. |
+
+Ce qui compte, à chaque étape : **savoir dans quelle couche va la chose que tu écris,
+et pourquoi**. Le code, l'IA le tape en 30 secondes.
 
 ---
 
@@ -198,12 +216,14 @@ abstract class TimelineEntryDto with _$TimelineEntryDto {
       _$TimelineEntryDtoFromJson(json);
 }
 ```
-> 🏅 **Bonus** : fais pareil pour `LineupEntryDto` (`strHome`, `strSubstitute`,
-> `strPlayer`, `intSquadNumber`).
+> 🏅 **Bonus, si ton trio est en avance** : fais pareil pour `LineupEntryDto`
+> (`strHome`, `strSubstitute`, `strPlayer`, `intSquadNumber`) pour alimenter l'onglet
+> Compo. Sinon, contente-toi de la timeline : l'onglet Compo restera vide, et c'est
+> très bien — l'API ne le remplit pas pour tous les matchs de toute façon.
 
-Il te faut aussi l'**enveloppe** de chaque réponse — l'API emballe toujours sa liste
+Il te faut aussi l'**enveloppe** de la réponse — l'API emballe toujours sa liste
 sous une clé. Regarde `events_response_dto.br.dart`, puis crée la même chose pour la
-timeline (clé `timeline`) et les compos (clé `lineup`) :
+timeline (clé `timeline`) :
 ```dart
 @freezed
 abstract class TimelineResponseDto with _$TimelineResponseDto {
@@ -231,8 +251,12 @@ extension EventDtoMapper on EventDto {
 `country` est passé par le data source, qui le tient du **catalogue de ligues injecté
 par le marché** — le mapper ne devine rien tout seul.
 
-Ajoute sur le même modèle `toEvents` / `toLineups` pour tes nouveaux DTOs (un but =
-`strTimeline == 'Goal'`, équipe à domicile = `strHome == 'Yes'`).
+Ajoute sur le même modèle un mapper pour ton `TimelineEntryDto` (un but =
+`strTimeline == 'Goal'`, un carton = `'Card'`, équipe à domicile = `strHome == 'Yes'`).
+
+> 💡 Un remplacement (`strTimeline == 'subst'`) n'est pas un fait de jeu qu'on affiche :
+> rends `null` et laisse le data source filtrer. Un mapper décide de la **traduction**,
+> pas de l'affichage.
 
 ### 2.4 — Implémenter le contrat
 **Fichier** `lib/src/data_sources/the_sports_db_scores_data_source.dart`.
@@ -257,13 +281,14 @@ Future<Result<Match, ScoresError>> fetchMatch(String id) async {
 > `providers_internal.br.dart` pour voir d'où ils viennent — même chose pour `clock`,
 > qui évite un `DateTime.now()` en dur (intestable).
 
-### 2.5 — 🟢 EXERCICE : le test de la source
-Un test par **comportement observable**, pas par méthode. Copie
-`the_sports_db_scores_data_source_test.dart` : le `HttpClient` y est un **mock**
-(`@GenerateMocks` dans `matchs_data_mocks.dart`) donc aucun test ne touche le réseau.
+### 2.5 — 🏅 BONUS : le test de la source
+**Ouvre** `the_sports_db_scores_data_source_test.dart` et lis-le, même si tu n'écris rien :
+c'est la convention de test de la prod. Le `HttpClient` y est un **mock** mockito déclaré
+dans `matchs_data_mocks.dart`, donc aucun test ne touche le réseau, et les phrases
+`given/when/then` décrivent un comportement **utilisateur**.
 
-Écris au moins ces trois-là :
-- le détail d'un match affiche ses buts et ses compositions ;
+Si ton trio est en avance, ajoute ces trois-là :
+- le détail d'un match affiche ses buts ;
 - un match inconnu remonte `ScoresError.notFound()` ;
 - un service injoignable remonte `ScoresError.unavailable()`.
 
@@ -346,19 +371,22 @@ mise run analyze
 **Objectif** : afficher le détail. La feature **possède ses propres widgets**
 (elle ne pioche pas dans `matchs`).
 
-1. `lib/src/widgets/event_tile.dart` — une ligne de timeline (minute, icône
-   but/carton, joueur).
-2. `lib/src/widgets/lineup_section.dart` — une composition (équipe + onze).
-3. `lib/src/match_detail_screen.dart` — `ConsumerWidget` qui prend le `matchId` :
+> ⚠️ **On ne fait pas d'UI aujourd'hui.** Une `Column` de `Text` suffit — le score, la
+> liste des buts, et c'est tout. Pas d'onglets si tu n'as pas le temps, pas de mise en
+> page. Ce qui compte, c'est *où* vivent les choses, pas comment elles sont jolies.
+
+1. `lib/src/match_detail_screen.dart` — `ConsumerWidget` qui prend le `matchId` :
    ```dart
    final match = ref.watch(matchProvider(matchId));
    return match.when(
      loading: ...,           // un loader
      error: ...,             // une copie utilisateur de ton l10n, jamais '$error'
-     data: (m) => ...,       // en-tête + onglets Résumé (m.events) / Compo (m.lineups)
+     data: (m) => ...,       // score + la liste de m.events
    );
    ```
-4. Dans `lib/src/routing/match_detail_router.br.dart`, passe le `matchId` en
+2. Les libellés vont dans `lib/src/l10n/match_detail_strings.dart`, une `const` par
+   libellé — pas de chaîne en dur dans le widget.
+3. Dans `lib/src/routing/match_detail_router.br.dart`, passe le `matchId` en
    paramètre de route et déclare le chemin absolu :
    ```dart
    enum MatchDetailRoutePath {
@@ -376,10 +404,13 @@ mise run analyze
      Widget build(BuildContext context, WidgetRef ref) => MatchDetailScreen(matchId: matchId);
    }
    ```
-5. Les couleurs et styles viennent de **ton** thème
+4. Les couleurs et styles viennent de **ton** thème
    (`ref.watch(matchDetailThemeProvider.select(…))`), alimenté par défaut depuis la
    palette DSM dans `providers_internal.br.dart`. Jamais de couleur brute, jamais
    d'import de `tactics_providers`.
+
+> 🏅 **Bonus** : `lib/src/widgets/match_event_tile.dart` (une ligne de timeline) et
+> `lineup_section.dart` (une composition), puis des onglets Résumé / Compo.
 
 **✅ Vérifie** : `dart run build_runner build` puis `mise run analyze` (le package
 doit compiler seul).
